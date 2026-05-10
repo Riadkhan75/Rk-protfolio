@@ -1,0 +1,356 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-family, "Inter", ui-sans-serif, system-ui, sans-serif);
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-primary-neon: var(--primary-color, #00f3ff);
+}
+
+:root {
+  --neon-pink: #ff00ff;
+  --neon-cyan: var(--primary-color, #00f3ff);
+  --neon-purple: #9d00ff;
+  --neon-blue: #0088ff;
+  --bg-black: #050505;
+}
+
+body {
+  cursor: none !important;
+}
+
+/* Ensure interactive elements show up if needed, but the user asked for cursor remove */
+a, button, input, textarea, [role="button"] {
+  cursor: none !important;
+}
+
+@keyframes music-bar {
+  0%, 100% { height: 30%; }
+  50% { height: 100%; }
+}
+
+@layer base {
+  body {
+    @apply bg-[#050505] text-white overflow-x-hidden selection:bg-cyan-500 selection:text-black;
+    font-family: var(--font-family, var(--font-sans));
+    cursor: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html.lenis {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto;
+  }
+
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .neon-border {
+    box-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan);
+    border: 1px solid var(--neon-cyan);
+  }
+
+  /* Hologram Effect */
+  .hologram-effect {
+    position: relative;
+    overflow: hidden;
+  }
+  .hologram-effect::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      transparent 50%,
+      rgba(0, 243, 255, 0.05) 50%,
+      rgba(0, 243, 255, 0.05) 52%,
+      transparent 52%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    animation: scanline 10s linear infinite;
+  }
+
+  @keyframes scanline {
+    from { background-position: 0 0; }
+    to { background-position: 0 100%; }
+  }
+
+  /* Glitch Text Upgrade */
+  .glitch-text {
+    position: relative;
+    animation: glitch-skew 1s infinite linear alternate-reverse;
+  }
+  .glitch-text::before, .glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+  }
+  .glitch-text::before {
+    color: #00f3ff;
+    animation: glitch-anim 2s infinite linear alternate-reverse;
+    left: 2px;
+    text-shadow: -2px 0 #ff00ff;
+  }
+  .glitch-text::after {
+    color: #ff00ff;
+    animation: glitch-anim2 3s infinite linear alternate-reverse;
+    left: -2px;
+    text-shadow: 2px 0 #00f3ff;
+  }
+
+  @keyframes glitch-anim {
+    0% { clip-path: inset(40% 0 61% 0); }
+    20% { clip-path: inset(92% 0 1% 0); }
+    40% { clip-path: inset(43% 0 1% 0); }
+    60% { clip-path: inset(25% 0 58% 0); }
+    80% { clip-path: inset(54% 0 7% 0); }
+    100% { clip-path: inset(58% 0 43% 0); }
+  }
+  @keyframes glitch-anim2 {
+    0% { clip-path: inset(12% 0 31% 0); }
+    20% { clip-path: inset(45% 0 12% 0); }
+    40% { clip-path: inset(2% 0 55% 0); }
+    60% { clip-path: inset(94% 0 6% 0); }
+    80% { clip-path: inset(11% 0 88% 0); }
+    100% { clip-path: inset(73% 0 21% 0); }
+  }
+  @keyframes glitch-skew {
+    0% { transform: skew(0deg); }
+    10% { transform: skew(-1deg); }
+    20% { transform: skew(1deg); }
+    30% { transform: skew(0deg); }
+    100% { transform: skew(0deg); }
+  }
+  
+  .neon-text-cyan {
+    text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan);
+  }
+
+  .neon-text-pink {
+    text-shadow: 0 0 5px var(--neon-pink), 0 0 10px var(--neon-pink);
+  }
+
+  .neon-text-purple {
+    text-shadow: 0 0 5px var(--neon-purple), 0 0 10px var(--neon-purple);
+  }
+
+  .glitch-effect {
+    position: relative;
+  }
+
+  .glitch-effect::before,
+  .glitch-effect::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    @apply opacity-80;
+  }
+
+  .glitch-effect::before {
+    left: 2px;
+    text-shadow: -2px 0 #ff00c1;
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch-anim 5s infinite linear alternate-reverse;
+  }
+
+  .glitch-effect::after {
+    left: -2px;
+    text-shadow: -2px 0 #00fff9, 2px 2px #ff00c1;
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch-anim2 1s infinite linear alternate-reverse;
+  }
+
+  @keyframes glitch-anim {
+    0% { clip: rect(31px, 9999px, 94px, 0); }
+    4.1% { clip: rect(6px, 9999px, 83px, 0); }
+    8.3% { clip: rect(10px, 9999px, 51px, 0); }
+    12.5% { clip: rect(44px, 9999px, 34px, 0); }
+    16.6% { clip: rect(98px, 9999px, 34px, 0); }
+    20.8% { clip: rect(11px, 9999px, 96px, 0); }
+    25% { clip: rect(24px, 9999px, 41px, 0); }
+    29.1% { clip: rect(9px, 9999px, 78px, 0); }
+    33.3% { clip: rect(76px, 9999px, 86px, 0); }
+    37.5% { clip: rect(20px, 9999px, 53px, 0); }
+    100% { clip: rect(20px, 9999px, 53px, 0); }
+  }
+
+  @keyframes glitch-anim2 {
+    0% { clip: rect(12px, 9999px, 34px, 0); }
+    100% { clip: rect(87px, 9999px, 12px, 0); }
+  }
+
+  .perspective-grid {
+    perspective: 500px;
+    position: absolute;
+    bottom: -10%;
+    left: -25%;
+    width: 150%;
+    height: 100%;
+    background-image: 
+      linear-gradient(rgba(0, 243, 255, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 243, 255, 0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
+    transform: rotateX(60deg) translateY(0);
+    animation: grid-move 10s linear infinite;
+    z-index: 0;
+  }
+
+  @keyframes grid-move {
+    from { background-position: 0 0; }
+    to { background-position: 0 40px; }
+  }
+
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-sm overflow-hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    @apply border-[#00f3ff]/50 bg-white/10;
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+  }
+
+  .scanlines {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    background: repeating-linear-gradient(
+      rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 0, 0, 0.06),
+      rgba(0, 255, 0, 0.02),
+      rgba(0, 0, 255, 0.06)
+    );
+    background-size: 100% 2px, 3px 100%;
+  }
+
+  .skew-button {
+    @apply relative px-8 py-4 font-black text-xs sm:text-sm tracking-[0.3em] skew-x-[-20deg] transition-all duration-300;
+  }
+
+  .skew-button-label {
+    @apply inline-block skew-x-[20deg] uppercase;
+  }
+
+  .btn-cyan {
+    @apply bg-[#00f3ff] text-black shadow-[0_0_15px_rgba(0,243,255,0.4)] hover:shadow-[0_0_30px_rgba(0,243,255,0.8)] hover:bg-white;
+  }
+
+  .btn-pink {
+    @apply border-2 border-[#ff00ff] text-[#ff00ff] shadow-[inset_0_0_10px_rgba(255,0,255,0.2)] hover:bg-[#ff00ff] hover:text-white hover:shadow-[0_0_20px_rgba(255,0,255,0.5)];
+  }
+
+  .btn-outline {
+    @apply border border-white/20 text-white/70 hover:border-white hover:text-white hover:bg-white/5;
+  }
+
+  .btn-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-shimmer::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    transform: rotate(45deg);
+    animation: shimmer 3s infinite;
+  }
+
+  .hologram-card {
+    @apply relative bg-black/40 border border-[#00f3ff]/20 overflow-hidden backdrop-blur-md;
+    box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.05);
+  }
+
+  .hologram-card::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none opacity-20;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 243, 255, 0.1) 3px,
+      rgba(0, 243, 255, 0.1) 3px
+    );
+  }
+
+  .hologram-card::after {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-[2px] bg-[#00f3ff]/30 pointer-events-none;
+    animation: scanline 8s linear infinite;
+  }
+
+  .scanline-overlay {
+    @apply absolute inset-0 pointer-events-none z-10;
+    background: linear-gradient(
+      rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 0, 0.06),
+      rgba(0, 255, 0, 0.02),
+      rgba(0, 0, 255, 0.06)
+    );
+    background-size: 100% 4px, 3px 100%;
+  }
+
+  @keyframes scanline {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(100vh); }
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-150%) rotate(45deg); }
+    100% { transform: translateX(150%) rotate(45deg); }
+  }
+}
+
+.matrix-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.05;
+  z-index: 0;
+}
+

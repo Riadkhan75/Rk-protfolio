@@ -1,0 +1,246 @@
+{
+  "entities": {
+    "Message": {
+      "title": "Contact Message",
+      "description": "Messages sent from the contact form",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Sender name" },
+        "email": { "type": "string", "format": "email", "description": "Sender email" },
+        "message": { "type": "string", "description": "Message content" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["name", "email", "message", "createdAt"]
+    },
+    "Project": {
+      "title": "Portfolio Project",
+      "description": "Projects displayed in the portfolio",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "image": { "type": "string" },
+        "tech": { "type": "array", "items": { "type": "string" } },
+        "link": { "type": "string" },
+        "github": { "type": "string" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["draft", "published"] },
+        "category": { "type": "string" },
+        "isFeatured": { "type": "boolean" }
+      },
+      "required": ["title", "desc", "image", "tech", "order", "status"]
+    },
+    "BlogPost": {
+      "title": "Blog Post",
+      "description": "Articles for the blog section",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "image": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "createdAt"]
+    },
+    "SystemSetting": {
+      "title": "System Setting",
+      "description": "Global configuration for the application",
+      "type": "object",
+      "properties": {
+        "alertMessage": { "type": "string" },
+        "showAlert": { "type": "boolean" },
+        "alertType": { "type": "string", "enum": ["info", "warning", "danger"] },
+        "profileImage": { "type": "string", "description": "Profile photo URL" },
+        "cvUrl": { "type": "string", "description": "CV/Resume file URL" },
+        "heroTitle_EN": { "type": "string" },
+        "heroTitle_BN": { "type": "string" },
+        "heroAccess_EN": { "type": "string" },
+        "heroAccess_BN": { "type": "string" },
+        "aboutTitle_EN": { "type": "string" },
+        "aboutTitle_BN": { "type": "string" },
+        "projectsTitle_EN": { "type": "string" },
+        "projectsTitle_BN": { "type": "string" },
+        "skillsTitle_EN": { "type": "string" },
+        "skillsTitle_BN": { "type": "string" },
+        "contactTitle_EN": { "type": "string" },
+        "contactTitle_BN": { "type": "string" },
+        "aboutText_EN": { "type": "string" },
+        "aboutText_BN": { "type": "string" },
+        "adminName": { "type": "string" },
+        "adminRole": { "type": "string" },
+        "adminLocation": { "type": "string" },
+        "adminExperience": { "type": "string" },
+        "maintenanceMode": { "type": "boolean" },
+        "siteTitle": { "type": "string" },
+        "footerText": { "type": "string" },
+        "introTitle": { "type": "string", "description": "Text displayed in the cinematic intro h1" },
+        "introSubtitle": { "type": "string", "description": "Text displayed below core in the cinematic intro" },
+        "audioOnText": { "type": "string", "description": "Text shown when audio is ON" },
+        "audioOffText": { "type": "string", "description": "Text shown when audio is OFF" },
+        "navLinks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "href": { "type": "string" },
+              "isExternal": { "type": "boolean" }
+            },
+            "required": ["name", "href"]
+          },
+          "description": "Dynamic menu buttons for navigation"
+        },
+        "secondaryLinks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "href": { "type": "string" },
+              "isExternal": { "type": "boolean" }
+            },
+            "required": ["name", "href"]
+          },
+          "description": "Secondary or extra navigation links"
+        },
+        "ambientMusicUrl": { "type": "string", "description": "URL for background ambient music" },
+        "currentlyCoding": { "type": "string", "description": "Text for live coding status" },
+        "bgText": { "type": "string", "description": "Stylized background overlay text" },
+        "primaryColor": { "type": "string", "description": "Primary theme color (hex)" },
+        "matrixSpeed": { "type": "number", "description": "Speed of matrix background effect" },
+        "fontStyle": { "type": "string", "description": "Global font family style" },
+        "metaDescription": { "type": "string", "description": "SEO meta description" },
+        "metaKeywords": { "type": "string", "description": "SEO keywords" },
+        "ogpImage": { "type": "string", "description": "Social share OGP image URL" }
+      }
+    },
+    "SystemLog": {
+      "title": "System Log",
+      "description": "Log entry for admin actions",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["action", "timestamp"]
+    },
+    "Skill": {
+      "title": "Skill",
+      "description": "Professional or technical skill",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "level": { "type": "number", "description": "Percentage 0-100" },
+        "category": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["name", "level", "order"]
+    },
+    "AnalyticsEntry": {
+      "title": "Analytics Entry",
+      "description": "Visitor traffic data",
+      "type": "object",
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "path": { "type": "string" },
+        "userAgent": { "type": "string" },
+        "referrer": { "type": "string" },
+        "sessionId": { "type": "string" }
+      }
+    },
+    "SystemStats": {
+      "title": "System Stats",
+      "description": "Global aggregated statistics",
+      "type": "object",
+      "properties": {
+        "totalVisits": { "type": "number" },
+        "uniqueVisitors": { "type": "number" },
+        "lastReset": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ContactLink": {
+      "title": "Contact Link",
+      "description": "Social media or contact links",
+      "type": "object",
+      "properties": {
+        "platform": { "type": "string" },
+        "url": { "type": "string" },
+        "icon": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["platform", "url", "order"]
+    },
+    "Challenge": {
+      "title": "Challenge",
+      "description": "Interactive hacking challenges",
+      "type": "object",
+      "properties": {
+        "target": { "type": "string", "description": "The correct answer to decrypt" },
+        "hint": { "type": "string", "description": "Hint for the user" },
+        "limit": { "type": "number", "description": "Max attempts allowed" },
+        "order": { "type": "number" }
+      },
+      "required": ["target", "hint", "limit", "order"]
+    },
+    "VaultItem": {
+      "title": "Vault Item",
+      "description": "Hidden items in the classified vault",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "image", "link", "file"] },
+        "order": { "type": "number" }
+      },
+      "required": ["title", "content", "type", "order"]
+    }
+  },
+  "firestore": {
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Stores user messages"
+    },
+    "/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Stores portfolio projects"
+    },
+    "/blog/{postId}": {
+      "schema": "BlogPost",
+      "description": "Stores blog posts"
+    },
+    "/settings/{settingId}": {
+      "schema": "SystemSetting",
+      "description": "Stores global settings"
+    },
+    "/contacts/{contactId}": {
+      "schema": "ContactLink",
+      "description": "Stores social links"
+    },
+    "/skills/{skillId}": {
+      "schema": "Skill",
+      "description": "Stores skills"
+    },
+    "/challenges/{challengeId}": {
+      "schema": "Challenge",
+      "description": "Stores hacking challenges"
+    },
+    "/vault/{itemId}": {
+      "schema": "VaultItem",
+      "description": "Stores hidden vault items"
+    },
+    "/analytics/{logId}": {
+      "schema": "AnalyticsEntry",
+      "description": "Visitor logs"
+    },
+    "/stats/global": {
+      "schema": "SystemStats",
+      "description": "Aggregated site metrics"
+    },
+    "/logs/{logId}": {
+      "schema": "SystemLog",
+      "description": "Admin activity history"
+    }
+  }
+}

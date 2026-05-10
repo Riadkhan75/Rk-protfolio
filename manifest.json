@@ -1,0 +1,21 @@
+{
+  "name": "NEON_GRID_OS",
+  "short_name": "NEON_GRID",
+  "description": "Cyberpunk Neural Portfolio Interface",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00f3ff",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=192&q=80",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=512&q=80",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
