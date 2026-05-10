@@ -1,8 +1,18 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
+const getGeminiClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.warn("GEMINI_API_KEY is missing. AI features will be disabled.");
+    return null;
+  }
+  return new GoogleGenAI({ apiKey });
+};
+
+const ai = getGeminiClient();
 
 export async function chatWithAI(message: string, context: string) {
+  if (!ai) return "ERROR: AI_MODULE_NOT_CONFIGURED. CHECK_API_KEY.";
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -23,6 +33,7 @@ export async function chatWithAI(message: string, context: string) {
 }
 
 export async function generateBlogDraft(topic: string) {
+  if (!ai) return "AI_OFFLINE: API_KEY_MISSING";
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3.1-pro-preview",

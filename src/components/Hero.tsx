@@ -77,14 +77,14 @@ export default function Hero() {
           
           <div className="relative mb-6">
             <h1 
-              className="text-5xl sm:text-7xl md:text-9xl font-black italic tracking-tighter leading-none relative group glitch-effect"
+              className="text-4xl xs:text-5xl sm:text-7xl md:text-9xl font-black italic tracking-tighter leading-none relative group glitch-effect"
               data-text={t('hero_title')}
             >
               {t('hero_title')}
             </h1>
           </div>
 
-          <div className="text-sm sm:text-base md:text-xl font-mono text-white/80 mt-2 tracking-widest bg-white/5 px-6 py-2 border-x border-primary-neon h-12 flex items-center">
+          <div className="text-xs sm:text-base md:text-xl font-mono text-white/80 mt-2 tracking-widest bg-white/5 px-4 sm:px-6 py-2 border-x border-primary-neon h-10 sm:h-12 flex items-center justify-center min-w-[240px] sm:min-w-[300px]">
             <Typewriter
               words={lang === 'EN' ? ['Full Stack Developer', 'UI Architect', 'Cyber Enthusiast', 'Digital Saboteur'] : ['ফুল স্ট্যাক ডেভেলপার', 'ইউআই আর্কিটেক্ট', 'সাইবার এনথুসিয়াস্ট', 'ডিজিটাল সাবোটিউর']}
               loop={0}

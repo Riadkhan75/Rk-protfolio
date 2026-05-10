@@ -248,29 +248,36 @@ export default function Navbar() {
               </div>
 
               {/* System Diagnostics in Mobile Menu - REDESIGNED */}
-              <div className="mt-6 flex flex-col gap-4">
-                 {/* SYSTEM_TIME */}
-                 <div className="p-4 bg-white/5 border border-white/10 rounded-sm">
-                    <p className="text-[9px] font-black tracking-widest text-[#00f3ff] uppercase mb-2 flex items-center gap-2">
-                       <Menu size={10} /> SYSTEM_TIME
-                    </p>
-                    <div className="flex flex-col">
-                       <span className="text-2xl font-black text-[#00f3ff] leading-none mb-1">
-                          {time.toLocaleTimeString([], { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              <div className="mt-4 flex flex-col gap-2">
+                 <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2.5 bg-white/5 border border-white/10 rounded-sm">
+                       <p className="text-[7px] font-black tracking-widest text-[#00f3ff] uppercase mb-1 flex items-center gap-1.5">
+                          <Menu size={8} /> TIME
+                       </p>
+                       <span className="text-xs font-black text-[#00f3ff] leading-none italic">
+                          {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                        </span>
-                       <span className="text-[8px] text-white/40 tracking-[0.3em]">
-                          UTC_{time.getTimezoneOffset() / -60}:00 // NEON_GRID
-                       </span>
+                    </div>
+
+                    <div className="p-2.5 bg-white/5 border border-white/10 rounded-sm overflow-hidden">
+                       <p className="text-[7px] font-black tracking-widest text-[#00f3ff] uppercase mb-1 flex items-center gap-1.5">
+                          <Activity size={8} /> UPLINK
+                       </p>
+                       <div className="flex items-center gap-2">
+                          <div className="w-1 h-1 bg-green-500 rounded-full animate-ping flex-shrink-0" />
+                          <span className="text-[7px] font-bold text-white/50 uppercase truncate">
+                             {currentlyCoding}
+                          </span>
+                       </div>
                     </div>
                  </div>
 
-                 {/* NODE_HEALTH */}
-                 <div className="p-4 bg-white/5 border border-white/10 rounded-sm">
-                    <p className="text-[9px] font-black tracking-widest text-[#00f3ff] uppercase mb-4 flex items-center gap-2">
-                       <Cpu size={10} /> NODE_HEALTH
+                 <div className="p-2.5 bg-white/5 border border-white/10 rounded-sm">
+                    <p className="text-[7px] font-black tracking-widest text-[#00f3ff] uppercase mb-2 flex items-center gap-1.5">
+                       <Cpu size={8} /> NODE_HEALTH
                     </p>
-                    <div className="space-y-3">
-                       <div className="flex justify-between items-center text-[9px] font-bold">
+                    <div className="space-y-2">
+                       <div className="flex justify-between items-center text-[7px] font-bold">
                           <span className="text-white/40 uppercase">CPU_LOAD</span>
                           <span className="text-[#ff00ff]">42%</span>
                        </div>
@@ -281,23 +288,6 @@ export default function Navbar() {
                              className="h-full bg-[#ff00ff] shadow-[0_0_5px_#ff00ff]" 
                           />
                        </div>
-                       <div className="flex justify-between items-center text-[9px] font-bold border-t border-white/5 pt-2">
-                          <span className="text-white/40 uppercase">LATENCY</span>
-                          <span className="text-primary-neon">12ms</span>
-                       </div>
-                    </div>
-                 </div>
-
-                 {/* LIVE_UPLINK */}
-                 <div className="p-4 bg-white/5 border border-white/10 rounded-sm">
-                    <p className="text-[9px] font-black tracking-widest text-[#00f3ff] uppercase mb-2 flex items-center gap-2">
-                       <Activity size={10} /> LIVE_UPLINK
-                    </p>
-                    <div className="flex items-center gap-3">
-                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping" />
-                       <span className="text-[10px] font-bold text-white/80 uppercase">
-                          CODING: <span className="text-primary-neon">{currentlyCoding}</span>
-                       </span>
                     </div>
                  </div>
               </div>

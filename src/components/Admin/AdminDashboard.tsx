@@ -324,8 +324,8 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        {/* Header */}
-        <header className="h-20 border-b border-white/10 flex items-center justify-between px-10 bg-black/20">
+        {/* Header - Hidden on Mobile */}
+        <header className="hidden md:flex h-20 border-b border-white/10 items-center justify-between px-10 bg-black/20">
           <div className="flex items-center gap-4">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_green]" />
             <span className="text-[10px] text-white/40 uppercase tracking-widest">System_Status: Optimal</span>
@@ -363,7 +363,7 @@ export default function AdminDashboard() {
         </header>
 
         {/* Scrollable Area */}
-        <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-10 custom-scrollbar">
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && <DashboardOverview stats={stats} messagesCount={messages.length} projectsCount={projects.length} />}
             {activeTab === 'challenges' && <ChallengeManager challenges={challenges} />}

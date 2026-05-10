@@ -116,10 +116,10 @@ export default function CinematicIntro({ onComplete }: { onComplete: () => void 
         </motion.div>
 
         <div className="space-y-4 w-full">
-          <div className="bg-white/5 border border-white/10 p-6 h-48 overflow-hidden rounded-sm relative">
+          <div className="bg-white/5 border border-white/10 p-4 sm:p-6 h-36 sm:h-48 overflow-hidden rounded-sm relative">
             <div className="flex flex-col gap-1">
               {logs.map((log, i) => (
-                <div key={i} className="flex items-center gap-3 text-[10px] text-[#00f3ff]/80">
+                <div key={i} className="flex items-center gap-3 text-[8px] sm:text-[10px] text-[#00f3ff]/80">
                   <span className="opacity-40">[{new Date().toLocaleTimeString()}]</span>
                   <span className="font-bold">{log}</span>
                 </div>
