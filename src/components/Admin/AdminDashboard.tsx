@@ -2414,17 +2414,17 @@ function SystemMonitor({ settings, logs }: any) {
         <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1">Low-level terminal and hardware status</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-black border-2 border-white/10 rounded-sm p-6 font-mono text-[11px] h-96 overflow-hidden relative group">
+          <div className="bg-black border-2 border-white/10 rounded-sm p-4 sm:p-6 font-mono text-[11px] h-96 overflow-hidden relative group">
              <div className="flex items-center gap-2 mb-6 border-b border-white/10 pb-2 text-white/40">
                 <Terminal size={14} />
                 <span>ROOT@NEON_CORE:~#</span>
              </div>
-             <div className="space-y-2 overflow-y-auto h-[80%] custom-scrollbar pr-4">
+             <div className="space-y-2 overflow-y-auto h-[80%] custom-scrollbar pr-4 text-[9px] sm:text-[11px]">
                 {commands.map((cmd, i) => (
-                  <div key={i} className="flex gap-4">
-                    <span className="text-primary-neon font-bold">[{new Date().toLocaleTimeString()}]</span>
+                  <div key={i} className="flex gap-2 sm:gap-4">
+                    <span className="text-primary-neon font-bold shrink-0">[{new Date().toLocaleTimeString()}]</span>
                     <span className={cmd.includes('FAILED') ? 'text-red-500' : 'text-white/60'}>{cmd}</span>
                   </div>
                 ))}
@@ -2433,18 +2433,18 @@ function SystemMonitor({ settings, logs }: any) {
              <div className="absolute inset-0 scanline-overlay opacity-30 pointer-events-none" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button 
               onClick={clearCache}
               className="p-4 border border-white/10 bg-white/5 hover:bg-[#00f3ff]/10 hover:border-[#00f3ff]/40 transition-all text-[10px] font-bold flex items-center justify-center gap-3 uppercase tracking-widest"
             >
-               <Bell size={14} /> PURGE_LOCAL_CACHE
+               <Bell size={14} /> PURGE_CACHE
             </button>
             <button 
               onClick={toggleMaintenance}
               className={`p-4 border transition-all text-[10px] font-bold flex items-center justify-center gap-3 uppercase tracking-widest ${settings?.maintenanceMode ? 'bg-red-500/20 border-red-500 text-red-500' : 'border-white/10 bg-white/5 hover:bg-red-500/10 hover:border-red-500/40 opacity-50'}`}
             >
-               <ShieldAlert size={14} /> {settings?.maintenanceMode ? 'KILL_MAINTENANCE' : 'INIT_MAINTENANCE'}
+               <ShieldAlert size={14} /> {settings?.maintenanceMode ? 'KILL_MAINT' : 'INIT_MAINT'}
             </button>
           </div>
         </div>
@@ -2499,12 +2499,12 @@ function ConfirmationModal({ isOpen, title, message, onConfirm, onCancel }: any)
           >
             <h3 className="text-lg font-black text-white italic tracking-tighter mb-2 uppercase">{title}</h3>
             <p className="text-[10px] text-white/60 mb-8 leading-relaxed font-mono uppercase tracking-[0.2em]">{message}</p>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <button 
                 onClick={onCancel}
                 className="flex-1 py-3 border border-white/10 text-white/40 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest rounded-sm"
               >
-                ABORT_MISSION
+                ABORT
               </button>
               <button 
                 onClick={() => {
@@ -2513,7 +2513,7 @@ function ConfirmationModal({ isOpen, title, message, onConfirm, onCancel }: any)
                 }}
                 className="flex-1 py-3 bg-red-500 text-black font-black text-[10px] hover:bg-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)] uppercase tracking-widest rounded-sm"
               >
-                CONFIRM_PURGE
+                CONFIRM
               </button>
             </div>
           </motion.div>
@@ -2525,19 +2525,19 @@ function ConfirmationModal({ isOpen, title, message, onConfirm, onCancel }: any)
 
 function StatCard({ label, value, icon: Icon, color, trend }: any) {
   return (
-    <div className="hologram-card p-6 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+    <div className="hologram-card p-4 sm:p-6 relative overflow-hidden group hover:scale-[1.02] transition-transform">
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">
           <div className="p-2 rounded-sm bg-white/5 border border-white/10 group-hover:border-[#00f3ff]/50 transition-colors">
             <Icon size={20} style={{ color }} />
           </div>
           {trend && (
-            <span className="text-[10px] font-bold text-green-500">{trend}</span>
+            <span className="text-[8px] sm:text-[10px] font-bold text-green-500 whitespace-nowrap">{trend}</span>
           )}
         </div>
-        <div>
-          <h3 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-1">{label}</h3>
-          <p className="text-3xl font-black italic tracking-tighter text-white">
+        <div className="min-w-0">
+          <h3 className="text-[9px] sm:text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-1 truncate">{label}</h3>
+          <p className="text-xl sm:text-3xl font-black italic tracking-tighter text-white truncate">
             {value}
           </p>
         </div>
@@ -2581,22 +2581,24 @@ function ThemeManager({ settings }: { settings: any }) {
         <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1">Aesthetic grid overrides</p>
       </div>
 
-      <form onSubmit={handleSave} className="hologram-card p-10 border-2 border-primary-neon/20 space-y-8">
+      <form onSubmit={handleSave} className="hologram-card p-6 sm:p-10 border-2 border-primary-neon/20 space-y-8">
         <div className="space-y-4">
           <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest block">Primary_Color</label>
-          <div className="flex gap-4 items-center">
-            <input 
-              type="color" 
-              value={formData.primaryColor} 
-              onChange={e => setFormData({...formData, primaryColor: e.target.value})} 
-              className="w-12 h-12 bg-transparent border-none cursor-pointer"
-            />
-            <input 
-              type="text" 
-              value={formData.primaryColor} 
-              onChange={e => setFormData({...formData, primaryColor: e.target.value})} 
-              className="flex-1 bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none font-mono"
-            />
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex gap-4 items-center w-full">
+               <input 
+                 type="color" 
+                 value={formData.primaryColor} 
+                 onChange={e => setFormData({...formData, primaryColor: e.target.value})} 
+                 className="w-12 h-12 bg-transparent border-none cursor-pointer shrink-0"
+               />
+               <input 
+                 type="text" 
+                 value={formData.primaryColor} 
+                 onChange={e => setFormData({...formData, primaryColor: e.target.value})} 
+                 className="flex-1 bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none font-mono"
+               />
+            </div>
           </div>
         </div>
 
