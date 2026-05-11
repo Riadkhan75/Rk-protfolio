@@ -20,7 +20,7 @@ export function useSoundEngine(ambientUrl: string = AMBIENT_URL) {
   const isYoutube = !!youtubeId;
 
   useEffect(() => {
-    if (isYoutube) {
+    if (isYoutube && youtubeId) {
       if (ambientRef.current) {
         ambientRef.current.pause();
         ambientRef.current = null;
@@ -45,11 +45,11 @@ export function useSoundEngine(ambientUrl: string = AMBIENT_URL) {
       audio.pause();
       ambientRef.current = null;
     };
-  }, [ambientUrl, isYoutube]);
+  }, [ambientUrl, isYoutube, youtubeId]);
 
   // Handle Mute/Unmute separately to avoid recreating the Audio object
   useEffect(() => {
-    if (isYoutube || !ambientRef.current) return;
+    if (isYoutube && youtubeId || !ambientRef.current) return;
 
     if (!isMuted) {
       ambientRef.current.play().catch(() => console.log('Autoplay blocked on state change'));

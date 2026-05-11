@@ -16,6 +16,7 @@ import {
   addLog,
   deleteMessage, 
   clearAllMessages,
+  clearAllLogs,
   deleteProject, 
   addProject, 
   updateProject,
@@ -87,6 +88,7 @@ import {
   Play,
   X,
   Sparkles,
+  Flame,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -106,6 +108,22 @@ export default function AdminDashboard() {
   const [analyticsLogs, setAnalyticsLogs] = useState<any[]>([]);
   const [systemLogs, setSystemLogs] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<string[]>([]);
+  const [confirmData, setConfirmData] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+
+  const confirmPurge = (title: string, message: string, action: () => Promise<void>) => {
+    setConfirmData({
+      title,
+      message,
+      onConfirm: async () => {
+        try {
+          await action();
+        } catch (err: any) {
+           console.error("Purge failure:", err);
+        }
+      }
+    });
+  };
+
   const navigate = useNavigate();
   const adminEmails = ['banglag215@gmail.com', 'rkkhan205090@gmail.com'];
 
@@ -366,23 +384,31 @@ export default function AdminDashboard() {
         <div className="flex-1 overflow-y-auto p-4 sm:p-10 custom-scrollbar">
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && <DashboardOverview stats={stats} messagesCount={messages.length} projectsCount={projects.length} />}
-            {activeTab === 'challenges' && <ChallengeManager challenges={challenges} />}
-            {activeTab === 'vault' && <VaultManager items={vaultItems} />}
-            {activeTab === 'projects' && <ProjectManager projects={projects} />}
-            {activeTab === 'skills' && <SkillManager skills={skills} />}
-            {activeTab === 'blog' && <BlogManager posts={blogPosts} />}
+            {activeTab === 'challenges' && <ChallengeManager challenges={challenges} confirmPurge={confirmPurge} />}
+            {activeTab === 'vault' && <VaultManager items={vaultItems} confirmPurge={confirmPurge} />}
+            {activeTab === 'projects' && <ProjectManager projects={projects} confirmPurge={confirmPurge} />}
+            {activeTab === 'skills' && <SkillManager skills={skills} confirmPurge={confirmPurge} />}
+            {activeTab === 'blog' && <BlogManager posts={blogPosts} confirmPurge={confirmPurge} />}
             {activeTab === 'theme' && <ThemeManager settings={settings} />}
             {activeTab === 'assets' && <AssetManager projects={projects} posts={blogPosts} settings={settings} />}
             {activeTab === 'seo' && <SeoManager settings={settings} />}
             {activeTab === 'music' && <MusicManager settings={settings} />}
-            {activeTab === 'contacts' && <ContactManager contacts={contacts} />}
-            {activeTab === 'messages' && <MessagesList messages={messages} />}
+            {activeTab === 'contacts' && <ContactManager contacts={contacts} confirmPurge={confirmPurge} />}
+            {activeTab === 'messages' && <MessagesList messages={messages} confirmPurge={confirmPurge} />}
             {activeTab === 'analytics' && <AnalyticsPanel logs={analyticsLogs} />}
             {activeTab === 'settings' && <SettingsManager settings={settings} />}
             {activeTab === 'system' && <SystemMonitor settings={settings} logs={analyticsLogs} />}
-            {activeTab === 'logs' && <LogViewer logs={systemLogs} />}
+            {activeTab === 'logs' && <LogViewer logs={systemLogs} confirmPurge={confirmPurge} />}
           </AnimatePresence>
         </div>
+
+        <ConfirmationModal 
+          isOpen={!!confirmData}
+          title={confirmData?.title || ''}
+          message={confirmData?.message || ''}
+          onConfirm={confirmData?.onConfirm || (() => {})}
+          onCancel={() => setConfirmData(null)}
+        />
 
         {/* Decorative Elements */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#00f3ff]/5 blur-[80px] pointer-events-none" />
@@ -630,7 +656,7 @@ function ImageUpload({ label, value, onChange }: { label: string, value: string,
   );
 }
 
-function ProjectManager({ projects }: { projects: any[] }) {
+function ProjectManager({ projects, confirmPurge }: { projects: any[], confirmPurge: any }) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ 
@@ -679,15 +705,22 @@ function ProjectManager({ projects }: { projects: any[] }) {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('TERMINATE_NODE_PROTOCOL?')) {
-      try {
-        await deleteProject(id);
-        await addLog('PROJECT_DELETE', `Node ${id} terminated from vault`);
-        alert('NODE_PURGED');
-      } catch (err) {
-        alert('PURGE_FAILURE');
+    confirmPurge(
+      'TERMINATE_NODE_PROTOCOL?',
+      'IDENTIFY_PURGE_TARGET: THIS_ACTION_CANNOT_BE_REVERSED_ONCE_COMMITTED.',
+      async () => {
+        try {
+          await deleteProject(id);
+          await addLog('PROJECT_DELETE', `Node ${id} terminated from vault`);
+          alert('NODE_PURGED_SUCCESSFULLY');
+        } catch (err: any) {
+          console.error('Project delete error:', err);
+          const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
+          alert(`PURGE_FAILURE: ${errorData.error || 'Identity verification failed or signal lost.'}`);
+          throw err;
+        }
       }
-    }
+    );
   };
 
   const closeForm = () => {
@@ -729,7 +762,7 @@ function ProjectManager({ projects }: { projects: any[] }) {
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black italic tracking-tighter">PROJECT_VAULT</h2>
           <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1">Manage public neural nodes</p>
@@ -743,9 +776,9 @@ function ProjectManager({ projects }: { projects: any[] }) {
       </div>
 
       {isAdding && (
-         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="hologram-card p-8 border-2 border-[#00f3ff]/30">
+         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="hologram-card p-6 sm:p-8 border-2 border-[#00f3ff]/30">
             <form onSubmit={handleAdd} className="space-y-6">
-               <div className="grid grid-cols-2 gap-6">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Title</label>
                     <input placeholder="Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none" required />
@@ -756,7 +789,7 @@ function ProjectManager({ projects }: { projects: any[] }) {
                   </div>
                </div>
 
-               <div className="grid grid-cols-3 gap-6">
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Category</label>
                     <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none">
@@ -774,28 +807,32 @@ function ProjectManager({ projects }: { projects: any[] }) {
                        <option value="draft">DRAFT</option>
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Featured</label>
-                    <button 
-                      type="button"
-                      onClick={() => setFormData({...formData, isFeatured: !formData.isFeatured})}
-                      className={`w-full p-3 border border-white/10 text-[10px] font-bold transition-all ${formData.isFeatured ? 'bg-[#00f3ff]/20 border-[#00f3ff] text-[#00f3ff]' : 'text-white/20'}`}
-                    >
-                      {formData.isFeatured ? 'FEATURED_ACTIVE' : 'NOT_FEATURED'}
-                    </button>
+                  <div className="flex items-center gap-4 h-full pt-4">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className={`w-5 h-5 border-2 flex items-center justify-center transition-all ${formData.isFeatured ? 'border-[#ff00ff] bg-[#ff00ff]/20' : 'border-white/10 group-hover:border-white/30'}`}>
+                        {formData.isFeatured && <div className="w-2.5 h-2.5 bg-[#ff00ff] rounded-full shadow-[0_0_8px_#ff00ff]" />}
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        className="hidden" 
+                        checked={formData.isFeatured} 
+                        onChange={e => setFormData({...formData, isFeatured: e.target.checked})} 
+                      />
+                      <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest group-hover:text-white/60 transition-colors">FEATURED_NODE</span>
+                    </label>
                   </div>
                </div>
 
-               <div className="grid grid-cols-2 gap-6">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                  <ImageUpload label="Project Image" value={formData.image} onChange={val => setFormData({...formData, image: val})} />
-                 <div className="space-y-4">
+                 <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Live Link</label>
-                      <input placeholder="Project Link" value={formData.link} onChange={e => setFormData({...formData, link: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none" />
+                       <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Live Link</label>
+                       <input placeholder="Project Link" value={formData.link} onChange={e => setFormData({...formData, link: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">GitHub link</label>
-                      <input placeholder="GitHub URL" value={formData.github} onChange={e => setFormData({...formData, github: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none" />
+                       <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">GitHub link</label>
+                       <input placeholder="GitHub URL" value={formData.github} onChange={e => setFormData({...formData, github: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none" />
                     </div>
                  </div>
                </div>
@@ -817,9 +854,9 @@ function ProjectManager({ projects }: { projects: any[] }) {
 
       <div className="grid gap-4">
         {projects.map((proj) => (
-          <div key={proj.id} className="hologram-card p-6 flex items-center justify-between group hover:border-[#00f3ff]/40 transition-all">
-            <div className="flex items-center gap-6">
-               <div className="w-16 h-16 bg-white/5 border border-white/10 overflow-hidden relative flex items-center justify-center">
+          <div key={proj.id} className="hologram-card p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-[#00f3ff]/40 transition-all">
+            <div className="flex items-center gap-4 sm:gap-6">
+               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/5 border border-white/10 overflow-hidden relative flex items-center justify-center shrink-0">
                   {proj.image ? (
                     <img src={proj.image} alt="" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
                   ) : (
@@ -829,9 +866,9 @@ function ProjectManager({ projects }: { projects: any[] }) {
                     <div className="absolute top-0 right-0 p-1 bg-[#ff00ff] text-white text-[6px] font-black italic">STAR</div>
                   )}
                </div>
-               <div>
-                  <div className="flex items-center gap-3">
-                    <h4 className="font-bold text-white group-hover:text-[#00f3ff] transition-colors">{proj.title}</h4>
+               <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <h4 className="font-bold text-white group-hover:text-[#00f3ff] transition-colors truncate max-w-[150px] sm:max-w-none">{proj.title}</h4>
                     <span className={`text-[8px] px-1 border ${proj.status === 'published' ? 'border-green-500 text-green-500' : 'border-yellow-500 text-yellow-500'}`}>
                       {proj.status?.toUpperCase()}
                     </span>
@@ -840,7 +877,7 @@ function ProjectManager({ projects }: { projects: any[] }) {
                   <p className="text-[10px] text-white/40 mt-1 line-clamp-1">{proj.desc}</p>
                </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 justify-end">
                <button onClick={() => startEdit(proj)} className="p-2 text-white/40 hover:text-[#00f3ff] transition-all hover:scale-110"><Edit3 size={16} /></button>
                <button onClick={() => handleDelete(proj.id)} className="p-2 text-white/40 hover:text-red-500 transition-all hover:scale-110"><Trash2 size={16} /></button>
             </div>
@@ -852,7 +889,7 @@ function ProjectManager({ projects }: { projects: any[] }) {
 }
 
 
-function SkillManager({ skills }: { skills: any[] }) {
+function SkillManager({ skills, confirmPurge }: { skills: any[], confirmPurge: any }) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ 
@@ -889,14 +926,22 @@ function SkillManager({ skills }: { skills: any[] }) {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('TERMINATE_PROTOCOL?')) {
-      try {
-        await deleteSkill(id);
-        alert('PROTOCOL_TERMINATED');
-      } catch (err) {
-        alert('TERMINATION_FAILURE');
+    confirmPurge(
+      'TERMINATE_PROTOCOL?',
+      'IDENTIFY_PURGE_TARGET: THIS_ACTION_CANNOT_BE_REVERSED_ONCE_COMMITTED.',
+      async () => {
+        try {
+          await deleteSkill(id);
+          await addLog('SKILL_DELETE', `Protocol ${id} purged from engine`);
+          alert('PROTOCOL_TERMINATED_SUCCESSFULLY');
+        } catch (err: any) {
+          console.error('Skill delete error:', err);
+          const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
+          alert(`TERMINATION_FAILURE: ${errorData.error || 'Protocol link unstable.'}`);
+          throw err;
+        }
       }
-    }
+    );
   };
 
   const closeForm = () => {
@@ -923,7 +968,7 @@ function SkillManager({ skills }: { skills: any[] }) {
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black italic tracking-tighter">PROTOCOL_ENGINE</h2>
           <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1">Configure neural strengths</p>
@@ -937,9 +982,9 @@ function SkillManager({ skills }: { skills: any[] }) {
       </div>
 
       {isAdding && (
-         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="hologram-card p-8 border-2 border-[#ff00ff]/30">
+         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="hologram-card p-6 sm:p-8 border-2 border-[#ff00ff]/30">
             <form onSubmit={handleAdd} className="space-y-6">
-               <div className="grid grid-cols-2 gap-6">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Skill Name</label>
                     <input placeholder="Skill Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#ff00ff] outline-none" required />
@@ -950,7 +995,7 @@ function SkillManager({ skills }: { skills: any[] }) {
                   </div>
                </div>
 
-               <div className="grid grid-cols-2 gap-6">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Strength Level ({formData.level}%)</label>
                     <input type="range" min="0" max="100" value={formData.level} onChange={e => setFormData({...formData, level: parseInt(e.target.value)})} className="w-full accent-[#ff00ff] mt-2" />
@@ -976,7 +1021,7 @@ function SkillManager({ skills }: { skills: any[] }) {
           <div key={skill.id} className="hologram-card p-6 flex items-center justify-between group hover:border-[#ff00ff]/40 transition-all border-l-4 border-l-[#ff00ff]">
             <div className="flex-1 mr-4">
               <div className="flex justify-between mb-2">
-                <h4 className="font-bold text-white transition-colors uppercase tracking-widest">{skill.name}</h4>
+                <h4 className="font-bold text-white transition-colors uppercase tracking-widest truncate max-w-[120px] sm:max-w-none">{skill.name}</h4>
                 <span className="text-[#ff00ff] text-xs font-mono">{skill.level}%</span>
               </div>
               <div className="h-1 bg-white/5 relative overflow-hidden">
@@ -995,19 +1040,24 @@ function SkillManager({ skills }: { skills: any[] }) {
   );
 }
 
-function MessagesList({ messages }: { messages: any[] }) {
+function MessagesList({ messages, confirmPurge }: { messages: any[], confirmPurge: any }) {
   const handleDeleteMessage = async (id: string, name: string) => {
-    if (confirm(`INITIATE_PURGE: Message from ${name}?`)) {
-      try {
-        await deleteMessage(id);
-        alert('SIGNAL_SUCCESSFULLY_PURGED');
-        await addLog('MESSAGE_DELETED', `Signal from ${name} purged from database`);
-      } catch (err: any) {
-        console.error('Delete message error:', err);
-        const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
-        alert(`PURGE_PROTOCOL_FAILED: ${errorData.error || 'Unknown Error'}`);
+    confirmPurge(
+      `INITIATE_PURGE: Message from ${name}?`,
+      'IDENTIFY_PURGE_TARGET: THIS_ACTION_CANNOT_BE_REVERSED_ONCE_COMMITTED.',
+      async () => {
+        try {
+          await deleteMessage(id);
+          alert('SIGNAL_SUCCESSFULLY_PURGED');
+          await addLog('MESSAGE_DELETED', `Signal from ${name} purged from database`);
+        } catch (err: any) {
+          console.error('Delete message error:', err);
+          const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
+          alert(`PURGE_PROTOCOL_FAILED: ${errorData.error || 'Unknown Error'}`);
+          throw err;
+        }
       }
-    }
+    );
   };
 
   const handleReply = (msg: any) => {
@@ -1031,18 +1081,23 @@ function MessagesList({ messages }: { messages: any[] }) {
         </div>
         {messages.length > 0 && (
           <button 
-            onClick={async () => {
-              if (confirm('WIPE_ALL_SIGNAL_PACKETS? THIS_ACTION_IS_IRREVERSIBLE.')) {
-                try {
-                  await clearAllMessages();
-                  await addLog('MESSAGES_WIPED', 'All intercepted signals purged from vault');
-                  alert('DATABASE_WIPED_CLEAN');
-                } catch (err: any) {
-                  console.error('Wipe messages error:', err);
-                  const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
-                  alert(`WIPE_PROTOCOL_FAILED: ${errorData.error || 'Unknown Error'}`);
+            onClick={() => {
+              confirmPurge(
+                'WIPE_ALL_SIGNAL_PACKETS?',
+                'THIS_ACTION_IS_IRREVERSIBLE. ALL intercepted signals will be purged from the vault.',
+                async () => {
+                  try {
+                    await clearAllMessages();
+                    await addLog('MESSAGES_WIPED', 'All intercepted signals purged from vault');
+                    alert('DATABASE_WIPED_CLEAN');
+                  } catch (err: any) {
+                    console.error('Wipe messages error:', err);
+                    const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
+                    alert(`WIPE_PROTOCOL_FAILED: ${errorData.error || 'Unknown Error'}`);
+                    throw err;
+                  }
                 }
-              }
+              );
             }}
             className="flex items-center gap-2 px-4 py-2 border border-red-500/30 text-red-500/60 hover:text-red-500 hover:bg-red-500/5 transition-all text-[10px] font-bold uppercase tracking-widest rounded-sm"
           >
@@ -1098,7 +1153,7 @@ function MessagesList({ messages }: { messages: any[] }) {
   );
 }
 
-function BlogManager({ posts }: { posts: any[] }) {
+function BlogManager({ posts, confirmPurge }: { posts: any[], confirmPurge: any }) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '', image: '' });
@@ -1145,14 +1200,22 @@ function BlogManager({ posts }: { posts: any[] }) {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('ERASE_CHRONICLE_DATA?')) {
-      try {
-        await deleteBlogPost(id);
-        alert('DATA_ERASED');
-      } catch (err) {
-        alert('ERASE_FAILURE');
+    confirmPurge(
+      'ERASE_CHRONICLE_DATA?',
+      'IDENTIFY_PURGE_TARGET: THIS_ACTION_CANNOT_BE_REVERSED_ONCE_COMMITTED.',
+      async () => {
+        try {
+          await deleteBlogPost(id);
+          await addLog('BLOG_DELETE', `Chronicle ${id} wiped from records`);
+          alert('DATA_ERASED_SUCCESSFULLY');
+        } catch (err: any) {
+          console.error('Blog delete error:', err);
+          const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
+          alert(`ERASE_FAILURE: ${errorData.error || 'Signal interruption.'}`);
+          throw err;
+        }
       }
-    }
+    );
   };
 
   const closeForm = () => {
@@ -1174,7 +1237,7 @@ function BlogManager({ posts }: { posts: any[] }) {
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black italic tracking-tighter">DATA_CHRONICLES</h2>
           <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1">Manage grid updates</p>
@@ -1188,26 +1251,30 @@ function BlogManager({ posts }: { posts: any[] }) {
       </div>
 
       {isAdding && (
-         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-8 border-2 border-[#ff00ff]/30">
+         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-6 sm:p-8 border-2 border-[#ff00ff]/30">
             <form onSubmit={handleAdd} className="space-y-6">
-               <div className="grid grid-cols-2 gap-6">
-                 <input placeholder="Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="bg-black/50 border border-white/10 p-3 text-xs focus:border-[#ff00ff] outline-none" required />
-                 <ImageUpload label="Blog Image" value={formData.image} onChange={val => setFormData({...formData, image: val})} />
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Entry Title</label>
+                    <input placeholder="Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#ff00ff] outline-none" required />
+                  </div>
+                  <ImageUpload label="Blog Image" value={formData.image} onChange={val => setFormData({...formData, image: val})} />
                </div>
                <div className="relative">
-                 <textarea placeholder="Content" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#ff00ff] outline-none h-48 custom-scrollbar" required />
-                 <button 
-                  type="button"
-                  onClick={handleAIGenerate}
-                  disabled={isAIGenerating}
-                  className="absolute bottom-4 right-4 p-2 bg-[#ff00ff]/10 border border-[#ff00ff]/30 text-[#ff00ff] hover:bg-[#ff00ff]/20 transition-all rounded-sm flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest disabled:opacity-30"
-                 >
-                   <Sparkles size={14} className={isAIGenerating ? 'animate-spin' : 'animate-pulse'} />
-                   {isAIGenerating ? 'PROCESSING...' : 'AI_GENERATE'}
-                 </button>
+                  <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest mb-2 block">Content</label>
+                  <textarea placeholder="Content" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#ff00ff] outline-none h-48 custom-scrollbar" required />
+                  <button 
+                   type="button"
+                   onClick={handleAIGenerate}
+                   disabled={isAIGenerating}
+                   className="absolute bottom-4 right-4 p-2 bg-[#ff00ff]/10 border border-[#ff00ff]/30 text-[#ff00ff] hover:bg-[#ff00ff]/20 transition-all rounded-sm flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest disabled:opacity-30"
+                  >
+                    <Sparkles size={14} className={isAIGenerating ? 'animate-spin' : 'animate-pulse'} />
+                    {isAIGenerating ? 'PROCESSING...' : 'AI_GENERATE'}
+                  </button>
                </div>
                <div className="flex justify-end gap-4">
-                  <button type="button" onClick={() => setIsAdding(false)} className="text-xs text-white/40 hover:text-white">CANCEL</button>
+                  <button type="button" onClick={closeForm} className="text-xs text-white/40 hover:text-white">CANCEL</button>
                   <button type="submit" className="bg-[#ff00ff] text-white px-6 py-2 text-xs font-bold">COMMIT_ENTRY</button>
                </div>
             </form>
@@ -1216,17 +1283,17 @@ function BlogManager({ posts }: { posts: any[] }) {
 
       <div className="grid gap-4">
         {posts.map((post) => (
-          <div key={post.id} className="glass-card p-6 flex items-center justify-between group hover:border-[#ff00ff]/40 transition-all">
-            <div className="flex items-center gap-6">
-               <div className="w-16 h-16 bg-white/5 border border-white/10 overflow-hidden">
+          <div key={post.id} className="glass-card p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-[#ff00ff]/40 transition-all">
+            <div className="flex items-center gap-4 sm:gap-6">
+               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/5 border border-white/10 overflow-hidden shrink-0">
                   <img src={post.image || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80'} alt="" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
                </div>
-               <div>
-                  <h4 className="font-bold text-white group-hover:text-[#ff00ff] transition-colors">{post.title}</h4>
+               <div className="min-w-0">
+                  <h4 className="font-bold text-white group-hover:text-[#ff00ff] transition-colors truncate">{post.title}</h4>
                   <p className="text-[10px] text-white/40 mt-1 line-clamp-1">{post.content}</p>
                </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 justify-end">
                <button onClick={() => startEdit(post)} className="p-2 text-white/40 hover:text-[#ff00ff] transition-all hover:scale-110"><Edit3 size={16} /></button>
                <button onClick={() => handleDelete(post.id)} className="p-2 text-white/40 hover:text-red-500 transition-all hover:scale-110"><Trash2 size={16} /></button>
             </div>
@@ -1237,7 +1304,7 @@ function BlogManager({ posts }: { posts: any[] }) {
   );
 }
 
-function ChallengeManager({ challenges }: { challenges: any[] }) {
+function ChallengeManager({ challenges, confirmPurge }: { challenges: any[], confirmPurge: any }) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ 
@@ -1270,14 +1337,22 @@ function ChallengeManager({ challenges }: { challenges: any[] }) {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('ERASE_CHALLENGE_PROTOCOL?')) {
-      try {
-        await deleteChallenge(id);
-        alert('CHALLENGE_TERMINATED');
-      } catch (err) {
-        alert('TERMINATION_FAILURE');
+    confirmPurge(
+      'ERASE_CHAL_PROT?',
+      'IDENTIFY_PURGE_TARGET: THIS_ACTION_CANNOT_BE_REVERSED_ONCE_COMMITTED.',
+      async () => {
+        try {
+          await deleteChallenge(id);
+          await addLog('CHALLENGE_DELETE', `Challenge ${id} terminated`);
+          alert('CHALLENGE_TERMINATED_SUCCESSFULLY');
+        } catch (err: any) {
+          console.error('Challenge delete error:', err);
+          const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
+          alert(`TERMINATION_FAILURE: ${errorData.error || 'System rejection.'}`);
+          throw err;
+        }
       }
-    }
+    );
   };
 
   const closeForm = () => {
@@ -1305,7 +1380,7 @@ function ChallengeManager({ challenges }: { challenges: any[] }) {
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black italic tracking-tighter">CHALLENGE_VAULT</h2>
           <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] mt-1">Configure hacking protocols</p>
@@ -1319,11 +1394,11 @@ function ChallengeManager({ challenges }: { challenges: any[] }) {
       </div>
 
       {isAdding && (
-         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-8 border-2 border-[#00f3ff]/30">
+         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-6 sm:p-8 border-2 border-[#00f3ff]/30">
             <form onSubmit={handleAdd} className="space-y-6">
-               <div className="grid grid-cols-3 gap-6">
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Target Keyword (Answer)</label>
+                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Target Keyword</label>
                     <input placeholder="e.g. ROOT" value={formData.target} onChange={e => setFormData({...formData, target: e.target.value.toUpperCase()})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none uppercase" required />
                   </div>
                   <div className="space-y-2">
@@ -1336,14 +1411,14 @@ function ChallengeManager({ challenges }: { challenges: any[] }) {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Attempts Limit</label>
+                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Limit</label>
                     <input type="number" min="1" value={formData.limit} onChange={e => setFormData({...formData, limit: parseInt(e.target.value)})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none" required />
                   </div>
                </div>
 
                <div className="space-y-2">
                   <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Hint / Clue</label>
-                  <textarea placeholder="Provide some clue for the user..." value={formData.hint} onChange={e => setFormData({...formData, hint: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none h-24" required />
+                  <textarea placeholder="Provide clue..." value={formData.hint} onChange={e => setFormData({...formData, hint: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none h-24" required />
                </div>
 
                <div className="flex justify-end gap-4">
@@ -1358,21 +1433,21 @@ function ChallengeManager({ challenges }: { challenges: any[] }) {
 
       <div className="grid gap-4">
         {challenges.map((challenge) => (
-          <div key={challenge.id} className="glass-card p-6 flex items-center justify-between group hover:border-[#00f3ff]/40 transition-all">
-            <div className="flex items-center gap-6">
-               <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center text-[#00f3ff]">
-                  <Lock size={20} />
+          <div key={challenge.id} className="glass-card p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-[#00f3ff]/40 transition-all">
+            <div className="flex items-center gap-4 sm:gap-6">
+               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 border border-white/10 flex items-center justify-center text-[#00f3ff] shrink-0">
+                  <Lock size={18} />
                </div>
-               <div>
-                  <div className="flex items-center gap-3">
-                    <h4 className="font-bold text-white group-hover:text-[#00f3ff] transition-colors tracking-widest uppercase">{challenge.target}</h4>
+               <div className="min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h4 className="font-bold text-white group-hover:text-[#00f3ff] transition-colors tracking-widest uppercase truncate">{challenge.target}</h4>
                     <span className={`text-[8px] px-1 border border-[#00f3ff]/20 text-[#00f3ff]/60 uppercase tracking-widest`}>{challenge.difficulty || 'easy'}</span>
                   </div>
                   <p className="text-[10px] text-white/40 mt-1 line-clamp-1 italic">{challenge.hint}</p>
                   <p className="text-[8px] text-[#00f3ff]/50 mt-1 uppercase tracking-widest">LIMIT: {challenge.limit} ATTEMPTS</p>
                </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 justify-end">
                <button onClick={() => startEdit(challenge)} className="p-2 text-white/40 hover:text-[#00f3ff] transition-all hover:scale-110"><Edit3 size={16} /></button>
                <button onClick={() => handleDelete(challenge.id)} className="p-2 text-white/40 hover:text-red-500 transition-all hover:scale-110"><Trash2 size={16} /></button>
             </div>
@@ -1383,7 +1458,7 @@ function ChallengeManager({ challenges }: { challenges: any[] }) {
   );
 }
 
-function VaultManager({ items }: { items: any[] }) {
+function VaultManager({ items, confirmPurge }: { items: any[], confirmPurge: any }) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ 
@@ -1415,14 +1490,22 @@ function VaultManager({ items }: { items: any[] }) {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('ERASE_CLASSIFIED_DATA?')) {
-      try {
-        await deleteVaultItem(id);
-        alert('DATA_ERASED');
-      } catch (err) {
-        alert('ERASE_FAILURE');
+    confirmPurge(
+      'ERASE_SECTOR_DATA?',
+      'IDENTIFY_PURGE_TARGET: THIS_ACTION_CANNOT_BE_REVERSED_ONCE_COMMITTED.',
+      async () => {
+        try {
+          await deleteVaultItem(id);
+          await addLog('VAULT_DELETE', `Classified item ${id} purged`);
+          alert('DATA_ERASED_SUCCESSFULLY');
+        } catch (err: any) {
+          console.error('Vault delete error:', err);
+          const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
+          alert(`ERASE_FAILURE: ${errorData.error || 'Encryption lock-in.'}`);
+          throw err;
+        }
       }
-    }
+    );
   };
 
   const closeForm = () => {
@@ -1449,7 +1532,7 @@ function VaultManager({ items }: { items: any[] }) {
       exit={{ opacity: 0, scale: 1.05 }}
       className="space-y-8"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black italic tracking-tighter">HIDDEN_VAULT</h2>
           <p className="text-[10px] text-white/40 uppercase tracking-[0.2em] mt-1 text-[#00f3ff]">Classified data management</p>
@@ -1463,9 +1546,9 @@ function VaultManager({ items }: { items: any[] }) {
       </div>
 
       {isAdding && (
-         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-8 border-2 border-red-500/30">
+         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 sm:p-8 border-2 border-red-500/30">
             <form onSubmit={handleAdd} className="space-y-6">
-               <div className="grid grid-cols-2 gap-6">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Secret Title</label>
                     <input placeholder="e.g. Hidden Message" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-red-500 outline-none" required />
@@ -1498,19 +1581,19 @@ function VaultManager({ items }: { items: any[] }) {
 
       <div className="grid gap-4">
         {items.map((item) => (
-          <div key={item.id} className="glass-card p-6 flex items-center justify-between group hover:border-red-500/40 transition-all">
-            <div className="flex items-center gap-6">
-               <div className="w-12 h-12 bg-red-500/5 border border-red-500/20 flex items-center justify-center text-red-500">
-                  <Shield size={20} />
+          <div key={item.id} className="glass-card p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-red-500/40 transition-all">
+            <div className="flex items-center gap-4 sm:gap-6">
+               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-500/5 border border-red-500/20 flex items-center justify-center text-red-500 shrink-0">
+                  <Shield size={18} />
                </div>
-               <div>
-                  <h4 className="font-bold text-white group-hover:text-red-500 transition-colors tracking-widest uppercase">{item.title}</h4>
-                  <p className="text-[10px] text-white/40 mt-1 line-clamp-1 italic text-xs font-mono">{item.type.toUpperCase()} // {item.content}</p>
+               <div className="min-w-0">
+                  <h4 className="font-bold text-white group-hover:text-red-500 transition-colors tracking-widest uppercase truncate">{item.title}</h4>
+                  <p className="text-[10px] text-white/40 mt-1 line-clamp-1 italic text-xs font-mono lowercase">{item.type} // {item.content}</p>
                </div>
             </div>
-            <div className="flex items-center gap-4">
-               <button onClick={() => startEdit(item)} className="p-2 text-white/40 hover:text-[#00f3ff] transition-all"><Edit3 size={16} /></button>
-               <button onClick={() => handleDelete(item.id)} className="p-2 text-white/40 hover:text-red-500 transition-all"><Trash2 size={16} /></button>
+            <div className="flex items-center gap-4 justify-end">
+               <button onClick={() => startEdit(item)} className="p-2 text-white/40 hover:text-[#00f3ff] transition-all hover:scale-110"><Edit3 size={16} /></button>
+               <button onClick={() => handleDelete(item.id)} className="p-2 text-white/40 hover:text-red-500 transition-all hover:scale-110"><Trash2 size={16} /></button>
             </div>
           </div>
         ))}
@@ -1519,7 +1602,7 @@ function VaultManager({ items }: { items: any[] }) {
   );
 }
 
-function ContactManager({ contacts }: { contacts: any[] }) {
+function ContactManager({ contacts, confirmPurge }: { contacts: any[], confirmPurge: any }) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ platform: '', url: '' });
@@ -1542,6 +1625,7 @@ function ContactManager({ contacts }: { contacts: any[] }) {
     if (p.includes('slack')) return Slack;
     if (p.includes('twitch')) return Twitch;
     if (p.includes('spotify') || p.includes('tiktok') || p.includes('music')) return Music;
+    if (p.includes('free fire') || p.includes('gaming')) return Flame;
     return LinkIcon;
   };
 
@@ -1601,14 +1685,22 @@ function ContactManager({ contacts }: { contacts: any[] }) {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('DISCONNECT_SIGNAL_NODE?')) {
-      try {
-        await deleteContact(id);
-        alert('SIGNAL_TERMINATED');
-      } catch (err) {
-        alert('DISCONNECT_FAILURE');
+    confirmPurge(
+      'DISCONNECT_SIGNAL_NODE?',
+      'IDENTIFY_PURGE_TARGET: THIS_ACTION_CANNOT_BE_REVERSED_ONCE_COMMITTED.',
+      async () => {
+        try {
+          await deleteContact(id);
+          await addLog('CONTACT_DELETE', `Signal node ${id} disconnected`);
+          alert('SIGNAL_TERMINATED_SUCCESSFULLY');
+        } catch (err: any) {
+          console.error('Contact delete error:', err);
+          const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
+          alert(`DISCONNECT_FAILURE: ${errorData.error || 'Signal node lock-out.'}`);
+          throw err;
+        }
       }
-    }
+    );
   };
 
   const closeForm = () => {
@@ -1630,7 +1722,7 @@ function ContactManager({ contacts }: { contacts: any[] }) {
       exit={{ opacity: 0, x: -20 }}
       className="space-y-8"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black italic tracking-tighter">SIGNAL_HUBS</h2>
           <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1">Manage contact nodes</p>
@@ -1644,34 +1736,34 @@ function ContactManager({ contacts }: { contacts: any[] }) {
       </div>
 
       {isAdding && (
-         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-8 border-2 border-[#00f3ff]/30">
+         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-6 sm:p-8 border-2 border-[#00f3ff]/30">
             <form onSubmit={handleAdd} className="space-y-6">
-               <div className="grid grid-cols-[1fr_80px] gap-6 items-start">
-                 <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                          <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Platform Name</label>
-                          <input placeholder="e.g. GitHub, LinkedIn" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none" required />
-                      </div>
-                      <div className="space-y-2">
-                          <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">URL / Address</label>
-                          <input placeholder="https://..." value={formData.url} onChange={e => handleUrlChange(e.target.value)} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none" required />
-                      </div>
-                    </div>
-                 </div>
-                 
-                 <div className="flex flex-col items-center gap-2 pt-6">
-                    <div className="w-12 h-12 bg-[#00f3ff]/10 border border-[#00f3ff]/30 flex items-center justify-center text-[#00f3ff]">
-                       {(() => {
-                         const Icon = getPlatformIcon(formData.platform);
-                         return <Icon size={24} />;
-                       })()}
-                    </div>
-                    <span className="text-[8px] text-white/40 uppercase tracking-tighter">Preview</span>
-                 </div>
+               <div className="grid grid-cols-1 sm:grid-cols-[1fr_80px] gap-6 items-start">
+                  <div className="space-y-6">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                       <div className="space-y-2">
+                           <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">Platform Name</label>
+                           <input placeholder="e.g. GitHub, LinkedIn" value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none" required />
+                       </div>
+                       <div className="space-y-2">
+                           <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest">URL / Address</label>
+                           <input placeholder="https://..." value={formData.url} onChange={e => handleUrlChange(e.target.value)} className="w-full bg-black/50 border border-white/10 p-3 text-xs focus:border-[#00f3ff] outline-none" required />
+                       </div>
+                     </div>
+                  </div>
+                  
+                  <div className="flex flex-col items-center gap-2 pt-0 sm:pt-6">
+                     <div className="w-12 h-12 bg-[#00f3ff]/10 border border-[#00f3ff]/30 flex items-center justify-center text-[#00f3ff] shrink-0">
+                        {(() => {
+                          const Icon = getPlatformIcon(formData.platform);
+                          return <Icon size={24} />;
+                        })()}
+                     </div>
+                     <span className="text-[8px] text-white/40 uppercase tracking-tighter">Preview</span>
+                  </div>
                </div>
                <div className="flex justify-end gap-4">
-                  <button type="button" onClick={() => setIsAdding(false)} className="text-xs text-white/40 hover:text-white">CANCEL</button>
+                  <button type="button" onClick={closeForm} className="text-xs text-white/40 hover:text-white">CANCEL</button>
                   <button type="submit" className="bg-[#00f3ff] text-black px-6 py-2 text-xs font-bold">BROADCAST_NODE</button>
                </div>
             </form>
@@ -1682,19 +1774,19 @@ function ContactManager({ contacts }: { contacts: any[] }) {
         {contacts.map((contact) => {
           const Icon = getPlatformIcon(contact.platform);
           return (
-            <div key={contact.id} className="glass-card p-6 flex items-center justify-between group hover:border-[#00f3ff]/40 transition-all">
-              <div className="flex items-center gap-6">
-                 <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center text-[#00f3ff]">
+            <div key={contact.id} className="glass-card p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-[#00f3ff]/40 transition-all">
+              <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 border border-white/10 flex items-center justify-center text-[#00f3ff] shrink-0">
                     <Icon size={20} />
                  </div>
-                 <div>
-                    <h4 className="font-bold text-white group-hover:text-[#00f3ff] transition-colors uppercase tracking-widest">{contact.platform}</h4>
-                    <p className="text-[10px] text-white/40 mt-1 line-clamp-1">{contact.url}</p>
+                 <div className="min-w-0">
+                    <h4 className="font-bold text-white group-hover:text-[#00f3ff] transition-colors uppercase tracking-widest truncate">{contact.platform}</h4>
+                    <p className="text-[10px] text-white/40 mt-1 line-clamp-1 truncate">{contact.url}</p>
                  </div>
               </div>
-              <div className="flex items-center gap-4">
-                 <button onClick={() => startEdit(contact)} className="p-2 text-white/40 hover:text-[#00f3ff] transition-all hover:scale-110"><Edit3 size={16} /></button>
-                 <button onClick={() => handleDelete(contact.id)} className="p-2 text-white/40 hover:text-red-500 transition-all hover:scale-110"><Trash2 size={16} /></button>
+              <div className="flex items-center gap-4 justify-end">
+                <button onClick={() => startEdit(contact)} className="p-2 text-white/40 hover:text-[#00f3ff] transition-all hover:scale-110"><Edit3 size={16} /></button>
+                <button onClick={() => handleDelete(contact.id)} className="p-2 text-white/40 hover:text-red-500 transition-all hover:scale-110"><Trash2 size={16} /></button>
               </div>
             </div>
           );
@@ -1742,6 +1834,7 @@ function SettingsManager({ settings }: { settings: any }) {
     skillsTitle_BN: '',
     contactTitle_EN: '',
     contactTitle_BN: '',
+    vaultPassword: '',
   });
 
   useEffect(() => {
@@ -1753,6 +1846,7 @@ function SettingsManager({ settings }: { settings: any }) {
         profileImage: settings.profileImage || '',
         cvUrl: settings.cvUrl || '',
         maintenanceMode: settings.maintenanceMode || false,
+        vaultPassword: settings.vaultPassword || '',
         siteTitle: settings.siteTitle || 'NEON_HACKER',
         introTitle: settings.introTitle || 'NEON_HACKER',
         introSubtitle: settings.introSubtitle || 'SYSTEM_BOOT_V2.0.9',
@@ -2106,6 +2200,18 @@ function SettingsManager({ settings }: { settings: any }) {
               <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${formData.maintenanceMode ? 'right-1' : 'left-1'}`} />
             </button>
           </div>
+
+          <div className="space-y-2 p-4 bg-red-500/5 border border-red-500/10">
+            <label className="text-[10px] font-mono text-red-500/60 uppercase tracking-widest">Vault_Security_Protocol (Password)</label>
+            <input 
+              type="text"
+              placeholder="Set vault access password" 
+              value={formData.vaultPassword} 
+              onChange={e => setFormData({...formData, vaultPassword: e.target.value})}
+              className="w-full bg-black/50 border border-red-500/20 p-3 text-xs focus:border-red-500 outline-none font-mono text-red-500" 
+            />
+            <p className="text-[8px] text-red-500/40 uppercase mt-1">Leave empty to disable password protection</p>
+          </div>
         </div>
 
         <div className="glass-card p-10 border-2 border-[#ff00ff]/20 space-y-8 relative">
@@ -2370,6 +2476,50 @@ function SystemMonitor({ settings, logs }: any) {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function ConfirmationModal({ isOpen, title, message, onConfirm, onCancel }: any) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onCancel}
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative glass-card max-w-sm w-full p-8 border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.2)]"
+          >
+            <h3 className="text-lg font-black text-white italic tracking-tighter mb-2 uppercase">{title}</h3>
+            <p className="text-[10px] text-white/60 mb-8 leading-relaxed font-mono uppercase tracking-[0.2em]">{message}</p>
+            <div className="flex gap-4">
+              <button 
+                onClick={onCancel}
+                className="flex-1 py-3 border border-white/10 text-white/40 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest rounded-sm"
+              >
+                ABORT_MISSION
+              </button>
+              <button 
+                onClick={() => {
+                  onConfirm();
+                  onCancel();
+                }}
+                className="flex-1 py-3 bg-red-500 text-black font-black text-[10px] hover:bg-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)] uppercase tracking-widest rounded-sm"
+              >
+                CONFIRM_PURGE
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -2705,12 +2855,36 @@ function MusicManager({ settings }: { settings: any }) {
   );
 }
 
-function LogViewer({ logs }: { logs: any[] }) {
+function LogViewer({ logs, confirmPurge }: { logs: any[], confirmPurge: any }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
-      <div>
-        <h2 className="text-2xl font-black italic tracking-tighter text-primary-neon">ADMIN_ACTION_LOGS</h2>
-        <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1">Audit trail for grid modifications</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+        <div>
+          <h2 className="text-2xl font-black italic tracking-tighter text-primary-neon">ADMIN_ACTION_LOGS</h2>
+          <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1">Audit trail for grid modifications</p>
+        </div>
+        {logs.length > 0 && (
+          <button 
+            onClick={() => {
+              confirmPurge(
+                'FLUSH_ALL_SYSTEM_LOGS?',
+                'IDENTIFY_PURGE_TARGET: THIS_ACTION_CANNOT_BE_REVERSED_ONCE_COMMITTED.',
+                async () => {
+                  try {
+                    await clearAllLogs();
+                    alert('LOG_STORAGE_FLUSHED');
+                  } catch (err: any) {
+                    alert('FLUSH_FAILURE');
+                    throw err;
+                  }
+                }
+              );
+            }}
+            className="flex items-center gap-2 px-4 py-2 border border-red-500/30 text-red-500/60 hover:text-red-500 hover:bg-red-500/5 transition-all text-[10px] font-bold uppercase tracking-widest rounded-sm"
+          >
+            <Trash2 size={14} /> FLUSH_AUDIT_LOGS
+          </button>
+        )}
       </div>
 
       <div className="hologram-card p-0 overflow-hidden border border-primary-neon/10">

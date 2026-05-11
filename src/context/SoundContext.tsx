@@ -12,7 +12,7 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
     <SoundContext.Provider value={soundEngine}>
       {children}
       {/* Hidden YouTube Player for background ambient */}
-      {soundEngine.isYoutube && (
+      {soundEngine.isYoutube && soundEngine.youtubeId && (
         <div className={cn(
           "fixed -top-full -left-full opacity-0 pointer-events-none",
           soundEngine.isMuted && "hidden"

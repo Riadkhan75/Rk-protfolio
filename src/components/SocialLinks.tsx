@@ -10,7 +10,8 @@ import {
   Send,
   MessageSquare,
   Music,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Flame
 } from 'lucide-react';
 import { subscribeToContacts } from '../lib/firebase';
 
@@ -35,6 +36,7 @@ export default function SocialLinks() {
     if (p.includes('telegram')) return Send;
     if (p.includes('discord')) return MessageSquare;
     if (p.includes('tiktok')) return Music;
+    if (p.includes('free fire') || p.includes('gaming')) return Flame;
     return LinkIcon;
   };
 

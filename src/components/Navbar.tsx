@@ -48,15 +48,22 @@ export default function Navbar() {
       </div>
 
       <div className="hidden md:flex items-center gap-6 lg:gap-8 text-[10px] tracking-[0.2em]">
-        {navLinks.map((link) => (
-          link.isExternal ? (
+        {navLinks.map((link) => {
+          const isVaultLink = link.href === '/vault' || link.name.toUpperCase().includes('VAULT');
+          return link.isExternal ? (
             <a
               key={link.name}
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
               onMouseEnter={playHover}
-              onClick={playClick}
+              onClick={(e) => {
+                if (isVaultLink) {
+                  e.preventDefault();
+                  window.dispatchEvent(new CustomEvent('TRIGGER_VAULT'));
+                }
+                playClick();
+              }}
               className="text-white/70 hover:text-[#00f3ff] transition-all tracking-[0.2em] relative group"
             >
               {link.name}
@@ -65,9 +72,15 @@ export default function Navbar() {
           ) : (
             <Link
               key={link.name}
-              to={link.href}
+              to={isVaultLink ? '#' : link.href}
               onMouseEnter={playHover}
-              onClick={playClick}
+              onClick={(e) => {
+                if (isVaultLink) {
+                  e.preventDefault();
+                  window.dispatchEvent(new CustomEvent('TRIGGER_VAULT'));
+                }
+                playClick();
+              }}
               className={cn(
                 "transition-all tracking-[0.2em] relative group",
                 location.pathname === link.href ? "text-[#00f3ff]" : "text-white/70 hover:text-[#00f3ff]"
@@ -80,7 +93,7 @@ export default function Navbar() {
               )} />
             </Link>
           )
-        ))}
+        })}
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
@@ -173,14 +186,21 @@ export default function Navbar() {
           >
             <div className="flex flex-col p-6 gap-4 max-w-7xl mx-auto">
               <div className="text-[10px] text-white/20 font-mono tracking-widest pb-2 border-b border-white/5 uppercase">Primary_Menu</div>
-              {navLinks.map((link) => (
-                link.isExternal ? (
+              {navLinks.map((link) => {
+                const isVaultLink = link.href === '/vault' || link.name.toUpperCase().includes('VAULT');
+                return link.isExternal ? (
                   <a
                     key={link.name}
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={(e) => {
+                      if (isVaultLink) {
+                        e.preventDefault();
+                        window.dispatchEvent(new CustomEvent('TRIGGER_VAULT'));
+                      }
+                      setIsMenuOpen(false);
+                    }}
                     className="text-xs font-bold tracking-[0.3em] text-white/60 hover:text-[#00f3ff] p-2 border-b border-white/5"
                   >
                     {link.name}
@@ -188,8 +208,14 @@ export default function Navbar() {
                 ) : (
                   <Link
                     key={link.name}
-                    to={link.href}
-                    onClick={() => setIsMenuOpen(false)}
+                    to={isVaultLink ? '#' : link.href}
+                    onClick={(e) => {
+                      if (isVaultLink) {
+                        e.preventDefault();
+                        window.dispatchEvent(new CustomEvent('TRIGGER_VAULT'));
+                      }
+                      setIsMenuOpen(false);
+                    }}
                     className={cn(
                       "text-xs font-bold tracking-[0.3em] p-2 border-b border-white/5",
                       location.pathname === link.href ? "text-[#00f3ff]" : "text-white/60 hover:text-[#00f3ff]"
@@ -198,19 +224,26 @@ export default function Navbar() {
                     {link.name}
                   </Link>
                 )
-              ))}
+              })}
 
               {secondaryLinks && secondaryLinks.length > 0 && (
                 <>
                   <div className="text-[10px] text-[#ff00ff]/30 font-mono tracking-widest pt-6 pb-2 border-b border-white/5 uppercase">Extra_Menu_Protocols</div>
-                  {secondaryLinks.map((link) => (
-                    link.isExternal ? (
+                  {secondaryLinks.map((link) => {
+                    const isVaultLink = link.href === '/vault' || link.name.toUpperCase().includes('VAULT');
+                    return link.isExternal ? (
                       <a
                         key={link.name}
                         href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={() => setIsMenuOpen(false)}
+                        onClick={(e) => {
+                          if (isVaultLink) {
+                            e.preventDefault();
+                            window.dispatchEvent(new CustomEvent('TRIGGER_VAULT'));
+                          }
+                          setIsMenuOpen(false);
+                        }}
                         className="text-xs font-bold tracking-[0.3em] text-white/60 hover:text-[#ff00ff] p-2 border-b border-[#ff00ff]/5"
                       >
                         {link.name}
@@ -218,8 +251,14 @@ export default function Navbar() {
                     ) : (
                       <Link
                         key={link.name}
-                        to={link.href}
-                        onClick={() => setIsMenuOpen(false)}
+                        to={isVaultLink ? '#' : link.href}
+                        onClick={(e) => {
+                          if (isVaultLink) {
+                            e.preventDefault();
+                            window.dispatchEvent(new CustomEvent('TRIGGER_VAULT'));
+                          }
+                          setIsMenuOpen(false);
+                        }}
                         className={cn(
                           "text-xs font-bold tracking-[0.3em] p-2 border-b border-[#ff00ff]/5",
                           location.pathname === link.href ? "text-[#ff00ff]" : "text-white/60 hover:text-[#ff00ff]"
@@ -228,7 +267,7 @@ export default function Navbar() {
                         {link.name}
                       </Link>
                     )
-                  ))}
+                  })}
                 </>
               )}
               

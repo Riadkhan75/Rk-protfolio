@@ -13,7 +13,8 @@ import {
   query, 
   orderBy,
   limit,
-  getDocs
+  getDocs,
+  writeBatch
 } from 'firebase/firestore';
 // @ts-ignore
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -86,7 +87,14 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   // Completely safe stringify
   let safeJson: string;
   try {
-    safeJson = JSON.stringify(errInfo);
+    const cache = new Set();
+    safeJson = JSON.stringify(errInfo, (_key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (cache.has(value)) return '[Circular]';
+        cache.add(value);
+      }
+      return value;
+    });
   } catch (e) {
     safeJson = `{"error": "JSON_STRINGIFY_FAILED", "originalMessage": "${String(errorMessage).replace(/"/g, '\\"')}"}`;
   }
@@ -152,6 +160,18 @@ export async function deleteMessage(id: string) {
     await deleteDoc(doc(db, 'messages', id));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `messages/${id}`);
+  }
+}
+
+export async function clearAllLogs() {
+  try {
+    const q = query(collection(db, 'logs'));
+    const snapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, 'logs');
   }
 }
 

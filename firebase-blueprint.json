@@ -112,7 +112,8 @@
         "fontStyle": { "type": "string", "description": "Global font family style" },
         "metaDescription": { "type": "string", "description": "SEO meta description" },
         "metaKeywords": { "type": "string", "description": "SEO keywords" },
-        "ogpImage": { "type": "string", "description": "Social share OGP image URL" }
+        "ogpImage": { "type": "string", "description": "Social share OGP image URL" },
+        "vaultPassword": { "type": "string", "description": "Password required to access the hidden vault" }
       }
     },
     "SystemLog": {

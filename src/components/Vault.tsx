@@ -1,20 +1,115 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Lock, FileText, ImageIcon, Link as LinkIcon, Database, X, Eye } from 'lucide-react';
+import { Shield, Lock, FileText, ImageIcon, Link as LinkIcon, Database, X, Eye, Terminal, Key } from 'lucide-react';
 import { subscribeToVault } from '../lib/firebase';
+import { useSettings } from '../context/AppContext';
 
 export default function Vault({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [items, setItems] = useState<any[]>([]);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [error, setError] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+  const [remainingTime, setRemainingTime] = useState<number>(0);
+  const { vaultPassword } = useSettings();
+
+  useEffect(() => {
+    // Load lockout state from localStorage
+    const savedLockout = localStorage.getItem('vault_lockout_until');
+    const savedAttempts = localStorage.getItem('vault_attempts');
+    
+    if (savedLockout) {
+      const until = parseInt(savedLockout);
+      if (Date.now() < until) {
+        setLockoutUntil(until);
+        setRemainingTime(Math.ceil((until - Date.now()) / 1000));
+      } else {
+        localStorage.removeItem('vault_lockout_until');
+        localStorage.removeItem('vault_attempts');
+      }
+    }
+    
+    if (savedAttempts) {
+      setAttempts(parseInt(savedAttempts));
+    }
+  }, []);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (lockoutUntil) {
+      interval = setInterval(() => {
+        const now = Date.now();
+        if (now >= lockoutUntil) {
+          setLockoutUntil(null);
+          setAttempts(0);
+          localStorage.removeItem('vault_lockout_until');
+          localStorage.removeItem('vault_attempts');
+          clearInterval(interval);
+        } else {
+          setRemainingTime(Math.ceil((lockoutUntil - now) / 1000));
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [lockoutUntil]);
 
   useEffect(() => {
     if (isOpen) {
       const unsub = subscribeToVault(setItems);
+      // Reset temporary unlock status but respect lockout
+      // Only auto-unlock if we are SURE vaultPassword is empty (after potential load)
+      if (vaultPassword) {
+        if (!lockoutUntil) {
+          setIsUnlocked(false);
+        }
+      } else if (vaultPassword === '') {
+        // This means it is explicitly set to empty (no password)
+        setIsUnlocked(true);
+      }
+      setPasswordInput('');
+      setError(false);
       return () => unsub();
     }
-  }, [isOpen]);
+  }, [isOpen, vaultPassword, lockoutUntil]);
+
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (lockoutUntil && Date.now() < lockoutUntil) return;
+
+    if (passwordInput === vaultPassword) {
+      setIsUnlocked(true);
+      setError(false);
+      setAttempts(0);
+      localStorage.removeItem('vault_attempts');
+      localStorage.removeItem('vault_lockout_until');
+    } else {
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      setError(true);
+      
+      if (newAttempts >= 3) {
+        const lockoutTime = Date.now() + (60 * 60 * 1000); // 1 hour
+        setLockoutUntil(lockoutTime);
+        localStorage.setItem('vault_lockout_until', lockoutTime.toString());
+      } else {
+        localStorage.setItem('vault_attempts', newAttempts.toString());
+      }
+
+      setTimeout(() => setError(false), 2000);
+    }
+  };
 
   if (!isOpen) return null;
+
+  const isLockedOut = lockoutUntil && Date.now() < lockoutUntil;
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -40,7 +135,7 @@ export default function Vault({ isOpen, onClose }: { isOpen: boolean; onClose: (
             </div>
             <div>
               <h2 className="text-xl font-black italic tracking-tighter text-white">CLASSIFIED_VAULT</h2>
-              <p className="text-[10px] text-red-500/60 uppercase tracking-widest mt-1">Status: ACCESS_LEVEL_OMEGA</p>
+              <p className="text-[10px] text-red-500/60 uppercase tracking-widest mt-1">Status: {isUnlocked ? 'ACCESS_LEVEL_OMEGA' : 'LOCKED_SECTOR'}</p>
             </div>
           </div>
           <button 
@@ -52,8 +147,58 @@ export default function Vault({ isOpen, onClose }: { isOpen: boolean; onClose: (
         </div>
 
         {/* Content */}
-        <div className="p-8 h-[60vh] overflow-y-auto custom-scrollbar">
-          {items.length === 0 ? (
+        <div className="p-8 h-[60vh] overflow-y-auto custom-scrollbar relative">
+          {!isUnlocked ? (
+            <div className="h-full flex flex-col items-center justify-center space-y-8">
+              <motion.div 
+                animate={error ? { x: [-10, 10, -10, 10, 0] } : {}}
+                className="w-16 h-16 rounded-full border-2 border-red-500/30 flex items-center justify-center text-red-500"
+              >
+                <Lock size={32} />
+              </motion.div>
+              
+              <div className="text-center space-y-2">
+                <h3 className="text-sm font-bold text-white uppercase tracking-[0.3em]">
+                  {isLockedOut ? 'SYSTEM_LOCKED' : 'Neural_Key_Required'}
+                </h3>
+                <p className="text-[10px] text-white/30 uppercase tracking-widest">
+                  {isLockedOut 
+                    ? `SECURITY_BREACH_DETECTED. LOCKOUT_ACTIVE: ${formatTime(remainingTime)} REMAINING`
+                    : 'Identify yourself to access the classified grid'}
+                </p>
+              </div>
+
+              <form onSubmit={handleUnlock} className="w-full max-w-xs space-y-4">
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-red-500/50">
+                    {isLockedOut ? <Shield size={14} /> : <Key size={14} />}
+                  </div>
+                  <input 
+                    type="password"
+                    autoFocus
+                    disabled={isLockedOut}
+                    placeholder={isLockedOut ? "LOCKED_OUT" : "ENTER_ACCESS_CODE"}
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    className={`w-full bg-black border ${error ? 'border-red-500 bg-red-500/5' : 'border-white/10'} p-3 pl-10 text-xs text-white placeholder:text-white/10 focus:border-red-500 outline-none font-mono tracking-[0.5em] transition-all ${isLockedOut ? 'opacity-20 cursor-not-allowed' : ''}`}
+                  />
+                </div>
+                <button 
+                  type="submit"
+                  disabled={isLockedOut}
+                  className={`w-full py-3 bg-red-500 text-black font-black text-xs tracking-[0.3em] hover:bg-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)] ${isLockedOut ? 'opacity-20 cursor-not-allowed' : ''}`}
+                >
+                  {isLockedOut ? 'LINK_DISABLED' : 'DECRYPT_ACCESS'}
+                </button>
+              </form>
+
+              {error && (
+                <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest animate-pulse">
+                  {isLockedOut ? 'MAX_ATTEMPTS_EXCEEDED: LOCKDOWN_INITIATED' : `Invalid_Key_Protocol: Access_Denied (${3 - attempts} attempts left)`}
+                </p>
+              )}
+            </div>
+          ) : items.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
               <Lock size={48} className="text-white/10 animate-pulse" />
               <p className="text-xs text-white/20 uppercase tracking-[0.3em]">No classified data found in this sector.</p>
@@ -109,7 +254,7 @@ export default function Vault({ isOpen, onClose }: { isOpen: boolean; onClose: (
               <div className="flex-1 p-10 overflow-y-auto flex flex-col items-center justify-center">
                  {selectedItem.type === 'image' && (
                     <div className="space-y-6 w-full max-w-2xl text-center">
-                       <img src={selectedItem.content} alt={selectedItem.title} className="w-full h-auto border border-white/10 rounded-sm shadow-[0_0_30px_rgba(255,255,255,0.05)]" />
+                       <img src={selectedItem.content || 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80'} alt={selectedItem.title} className="w-full h-auto border border-white/10 rounded-sm shadow-[0_0_20px_#ef4444]" />
                        <p className="text-xs text-white/60 font-mono italic">DECRYPTED_IMAGE_PACKET</p>
                     </div>
                  )}

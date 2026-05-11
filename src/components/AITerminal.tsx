@@ -31,8 +31,17 @@ export default function AITerminal() {
     setHistory(prev => [...prev, { type: 'user', text: userMsg }]);
     
     // Command Processing
-    if (userMsg.startsWith('/')) {
-      const command = userMsg.toLowerCase().split(' ')[0];
+    const commandText = userMsg.toLowerCase().trim();
+    if (commandText.startsWith('/') || commandText === 'unlock vault') {
+      const command = commandText.split(' ')[0];
+      
+      // Special handle for 'unlock vault' which doesn't start with /
+      if (commandText === 'unlock vault') {
+        setHistory(prev => [...prev, { type: 'bot', text: 'ACCESSING_HIDDEN_VAULT... ENCRYPTION: 1024-BIT... ACCESS_GRANTED.' }]);
+        window.dispatchEvent(new CustomEvent('TRIGGER_VAULT'));
+        return;
+      }
+
       switch (command) {
         case '/clear':
           setHistory([{ type: 'bot', text: 'TERMINAL_CLEARED. READY.' }]);
@@ -45,11 +54,14 @@ export default function AITerminal() {
           return;
         case '/vault':
           setHistory(prev => [...prev, { type: 'bot', text: 'ACCESSING_HIDDEN_VAULT... ENCRYPTION: 1024-BIT... ACCESS_GRANTED.' }]);
-          // Store event or trigger navigation/modal
           window.dispatchEvent(new CustomEvent('TRIGGER_VAULT'));
           return;
+        case '/reboot':
+          setHistory(prev => [...prev, { type: 'bot', text: 'INITIATING_SYSTEM_REBOOT... SHUTTING_DOWN_HUD... REBOOTING...' }]);
+          setTimeout(() => window.location.reload(), 1500);
+          return;
         case '/help':
-          setHistory(prev => [...prev, { type: 'bot', text: 'AVAILABLE_COMMANDS: /clear, /ls, /status, /vault, /help.' }]);
+          setHistory(prev => [...prev, { type: 'bot', text: 'AVAILABLE_COMMANDS: /clear, /ls, /status, /vault, /reboot, /help.' }]);
           return;
         default:
           setHistory(prev => [...prev, { type: 'bot', text: `ERROR: COMMAND_${command.toUpperCase()}_NOT_FOUND.` }]);
@@ -87,7 +99,7 @@ export default function AITerminal() {
           y: 0, 
           scale: 1,
           height: isMinimized ? 'auto' : '500px',
-          width: isMinimized ? '300px' : '400px'
+          width: isMinimized ? '280px' : (window.innerWidth < 450 ? 'calc(100vw - 48px)' : '400px')
         }}
         exit={{ opacity: 0, y: 20, scale: 0.9 }}
         className="fixed bottom-6 right-6 z-50 bg-black border border-[#00f3ff] shadow-[0_0_30px_rgba(0,243,255,0.2)] flex flex-col font-mono"

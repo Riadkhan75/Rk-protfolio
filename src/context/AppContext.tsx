@@ -129,6 +129,7 @@ const SettingsContext = createContext<{
   metaDescription: string;
   metaKeywords: string;
   ogpImage: string;
+  vaultPassword: string;
   skills: any[];
   isMenuOpen: boolean;
   setIsMenuOpen: (v: boolean) => void;
@@ -171,6 +172,7 @@ const SettingsContext = createContext<{
   metaDescription: 'Tech Portfolio of a Neon Cyberpunk Developer',
   metaKeywords: 'developer, cyberpunk, portfolio',
   ogpImage: '',
+  vaultPassword: '',
   skills: [],
   isMenuOpen: false,
   setIsMenuOpen: () => {},
@@ -213,6 +215,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [metaDescription, setMetaDescription] = useState('Tech Portfolio of a Neon Cyberpunk Developer');
   const [metaKeywords, setMetaKeywords] = useState('developer, cyberpunk, portfolio');
   const [ogpImage, setOgpImage] = useState('');
+  const [vaultPassword, setVaultPassword] = useState('');
   const [skills, setSkills] = useState<any[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -248,6 +251,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setMetaDescription(settings.metaDescription || 'Tech Portfolio of a Neon Cyberpunk Developer');
         setMetaKeywords(settings.metaKeywords || 'developer, cyberpunk, portfolio');
         setOgpImage(settings.ogpImage || '');
+        setVaultPassword(settings.vaultPassword || '');
       }
     });
 
@@ -292,6 +296,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       metaDescription,
       metaKeywords,
       ogpImage,
+      vaultPassword,
       skills,
       isMenuOpen,
       setIsMenuOpen

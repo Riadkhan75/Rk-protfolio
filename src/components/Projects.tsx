@@ -3,8 +3,9 @@ import { ExternalLink, Github, Box, Activity } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { subscribeToProjects } from '../lib/firebase';
 import { useLanguage } from '../context/AppContext';
+import ProjectWindow from './ProjectWindow';
 
-function ProjectCard({ project, index, t }: { project: any, index: number, t: any, key?: any }) {
+function ProjectCard({ project, index, t, onSelect }: { project: any, index: number, t: any, onSelect: (p: any) => void }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
@@ -41,7 +42,7 @@ function ProjectCard({ project, index, t }: { project: any, index: number, t: an
       onMouseLeave={handleMouseLeave}
       style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
       className="glass-card group border-l-4 border-l-[#00f3ff]/50 relative cursor-pointer"
-      onClick={() => project.link && window.open(project.link, '_blank')}
+      onClick={() => project.link && onSelect(project)}
     >
       <div className="absolute inset-0 bg-gradient-to-tr from-[#00f3ff]/10 via-transparent to-[#ff00ff]/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
       
@@ -81,7 +82,7 @@ function ProjectCard({ project, index, t }: { project: any, index: number, t: an
         <div className="flex items-center gap-4">
           <motion.button 
             whileHover={{ x: 5 }}
-            onClick={(e) => { e.stopPropagation(); window.open(project.link, '_blank'); }}
+            onClick={(e) => { e.stopPropagation(); onSelect(project); }}
             className="flex items-center gap-2 text-xs font-mono text-white/50 hover:text-[#00f3ff] transition-colors uppercase tracking-[0.2em]"
           >
             <ExternalLink size={14} /> LIVE_VIEW
@@ -104,6 +105,8 @@ function ProjectCard({ project, index, t }: { project: any, index: number, t: an
 
 export default function Projects() {
   const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProject, setSelectedProject] = useState<any | null>(null);
+  const [isWindowOpen, setIsWindowOpen] = useState(false);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -119,6 +122,11 @@ export default function Projects() {
     });
     return () => unsub();
   }, []);
+
+  const handleSelectProject = (project: any) => {
+    setSelectedProject(project);
+    setIsWindowOpen(true);
+  };
 
   return (
     <section id="projects" className="py-24 px-6 sm:px-12 max-w-7xl mx-auto relative z-10">
@@ -151,10 +159,16 @@ export default function Projects() {
               index % 4 === 3 ? "lg:row-span-2" : ""
             }`}
           >
-            <ProjectCard project={project} index={index} t={t} />
+            <ProjectCard project={project} index={index} t={t} onSelect={handleSelectProject} />
           </motion.div>
         ))}
       </div>
+
+      <ProjectWindow 
+        isOpen={isWindowOpen} 
+        onClose={() => setIsWindowOpen(false)} 
+        project={selectedProject} 
+      />
     </section>
   );
 }

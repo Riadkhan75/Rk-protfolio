@@ -24,6 +24,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AITerminal from './components/AITerminal';
 import Challenges from './components/Challenges';
 import Vault from './components/Vault';
+import Cursor from './components/Cursor';
 import { SettingsProvider, LanguageProvider, useSettings, useLanguage } from './context/AppContext';
 import { trackVisit } from './lib/analyticsService';
 import { Terminal, ShieldAlert, Volume2, VolumeX } from 'lucide-react';
@@ -82,6 +83,8 @@ function RootLayout({ children }: { children: ReactNode }) {
   const { neonMode, maintenanceMode, primaryColor, fontStyle } = useSettings();
   const { isMuted, toggleMute } = useSound();
 
+  const location = useLocation();
+
   useEffect(() => {
     trackVisit();
 
@@ -89,6 +92,14 @@ function RootLayout({ children }: { children: ReactNode }) {
     window.addEventListener('TRIGGER_VAULT', handleOpenVault);
     return () => window.removeEventListener('TRIGGER_VAULT', handleOpenVault);
   }, []);
+
+  useEffect(() => {
+    if (location.pathname === '/vault') {
+      setIsVaultOpen(true);
+      // Optional: you might want to redirect back to where they were
+      // but for now just opening is enough as it's a modal overlay
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (primaryColor) {
@@ -108,12 +119,15 @@ function RootLayout({ children }: { children: ReactNode }) {
     }
   };
 
-  if (maintenanceMode) {
+  const isExcludeMaintenance = window.location.pathname.startsWith('/adminriad') || window.location.pathname.startsWith('/loginriad');
+
+  if (maintenanceMode && !isExcludeMaintenance) {
     return <MaintenanceMode />;
   }
 
   return (
     <main className={`relative min-h-screen selection:bg-cyan-500 selection:text-black transition-colors duration-500 ${neonMode ? 'neon-theme' : ''}`}>
+      <Cursor />
       <AnimatePresence>
         {isLoading && (
           <CinematicIntro onComplete={handleIntroComplete} />
