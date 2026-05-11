@@ -188,13 +188,34 @@ export default function AdminDashboard() {
         </button>
       </div>
 
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 border-r border-white/10 flex flex-col bg-black/90 backdrop-blur-2xl transition-transform duration-300
+        fixed inset-y-0 left-0 z-60 w-64 border-r border-white/10 flex flex-col bg-black transition-transform duration-300
         md:relative md:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-8 border-b border-white/10 flex flex-col items-center text-center">
+        <div className="p-8 border-b border-white/10 flex flex-col items-center text-center shrink-0 relative">
+          {/* Mobile Close Button */}
+          <button 
+            onClick={() => setIsSidebarOpen(false)}
+            className="md:hidden absolute top-4 right-4 text-white/40 hover:text-white"
+          >
+            <X size={20} />
+          </button>
+          
           <div className="relative mb-6">
              <div className="w-20 h-20 rounded-full border-2 border-[#00f3ff] p-1 bg-black overflow-hidden relative shadow-[0_0_15px_rgba(0,243,255,0.3)]">
                 {(settings?.profileImage && settings.profileImage.trim() !== '') ? (
@@ -211,12 +232,12 @@ export default function AdminDashboard() {
           <h1 className="text-xl font-black italic tracking-tighter text-[#00f3ff] uppercase mb-1">
             ACCESS_GRANTED
           </h1>
-          <p className="text-[10px] text-[#ff00ff] font-mono tracking-[0.4em] mb-4">
+          <p className="text-[10px] text-[#ff00ff] font-mono tracking-[0.4em]">
             {settings?.siteTitle || 'NEON_HACKER'}
           </p>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
           <SidebarLink 
             icon={LayoutDashboard} 
             label="DASHBOARD" 
