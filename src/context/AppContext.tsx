@@ -133,6 +133,8 @@ const SettingsContext = createContext<{
   skills: any[];
   isMenuOpen: boolean;
   setIsMenuOpen: (v: boolean) => void;
+  isDesktopMode: boolean;
+  setIsDesktopMode: (v: boolean) => void;
 }>({
   matrixEnabled: false,
   setMatrixEnabled: () => {},
@@ -176,6 +178,8 @@ const SettingsContext = createContext<{
   skills: [],
   isMenuOpen: false,
   setIsMenuOpen: () => {},
+  isDesktopMode: false,
+  setIsDesktopMode: () => {},
 });
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
@@ -218,6 +222,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [vaultPassword, setVaultPassword] = useState('');
   const [skills, setSkills] = useState<any[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDesktopMode, setIsDesktopMode] = useState(() => localStorage.getItem('isDesktopMode') === 'true');
+
+  useEffect(() => {
+    localStorage.setItem('isDesktopMode', String(isDesktopMode));
+  }, [isDesktopMode]);
 
   useEffect(() => {
     const unsub = subscribeToSettings((settings) => {
@@ -299,7 +308,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       vaultPassword,
       skills,
       isMenuOpen,
-      setIsMenuOpen
+      setIsMenuOpen,
+      isDesktopMode,
+      setIsDesktopMode
     }}>
       {children}
     </SettingsContext.Provider>

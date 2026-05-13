@@ -22,9 +22,8 @@
 
 @layer base {
   body {
-    @apply bg-[#050505] text-white selection:bg-cyan-500 selection:text-black;
+    @apply bg-[#050505] text-white overflow-x-hidden selection:bg-cyan-500 selection:text-black;
     font-family: var(--font-family, var(--font-sans));
-    min-width: 1280px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -344,5 +343,10 @@
   pointer-events: none;
   opacity: 0.05;
   z-index: 0;
+}
+
+.desktop-forced {
+  min-width: 1280px !important;
+  overflow-x: auto !important;
 }
 

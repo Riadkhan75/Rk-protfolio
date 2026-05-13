@@ -64,32 +64,39 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     errorMessage = String(error);
   }
 
-  // Debug log the error strings for the console - avoids passing complex/circular objects to proxies
-  console.error(`[Firestore ${operationType}] error: ${errorMessage}, code: ${errorCode}, path: ${path}`);
+  // Debug log the raw error for the console
+  console.error(`[Firestore ${operationType}] Raw Error:`, error);
 
-  // Construct a clean, flat object for logging
-  const plainErrInfo = {
+  const errInfo = {
     error: String(errorMessage),
     code: String(errorCode),
     operationType: String(operationType),
     path: path ? String(path) : null,
-    origin: window.location.origin,
-    url: window.location.href,
-    timestamp: new Date().toISOString(),
-    uid: auth.currentUser?.uid || null,
-    email: auth.currentUser?.email || null,
-    emailVerified: !!auth.currentUser?.emailVerified
+    context: {
+      origin: window.location.origin,
+      url: window.location.href,
+      timestamp: new Date().toISOString()
+    },
+    auth: {
+      uid: auth.currentUser?.uid || null,
+      email: auth.currentUser?.email || null,
+      emailVerified: !!auth.currentUser?.emailVerified
+    }
   };
 
-  // Safe stringify with absolute fallback
+  // Completely safe stringify
   let safeJson: string;
   try {
-    safeJson = JSON.stringify(plainErrInfo);
-  } catch (e) {
-    safeJson = JSON.stringify({
-      error: "JSON_STRINGIFY_FAILED",
-      originalMessage: String(errorMessage).substring(0, 500)
+    const cache = new Set();
+    safeJson = JSON.stringify(errInfo, (_key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (cache.has(value)) return '[Circular]';
+        cache.add(value);
+      }
+      return value;
     });
+  } catch (e) {
+    safeJson = `{"error": "JSON_STRINGIFY_FAILED", "originalMessage": "${String(errorMessage).replace(/"/g, '\\"')}"}`;
   }
 
   throw new Error(safeJson);

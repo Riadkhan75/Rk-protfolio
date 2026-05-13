@@ -118,7 +118,7 @@ export default function AdminDashboard() {
         try {
           await action();
         } catch (err: any) {
-           console.error("Purge failure:", err.message || String(err));
+           console.error("Purge failure:", err);
         }
       }
     });
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-black text-white font-mono flex flex-col md:flex-row">
       {/* Mobile Header */}
-      <div className="md:hidden p-4 border-b border-white/10 flex items-center justify-between bg-black/80 backdrop-blur-md">
+      <div className="md:hidden p-4 border-b border-white/10 flex items-center justify-between bg-black/80 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3 text-[#00f3ff]">
           <Activity size={20} />
           <h2 className="text-lg font-black italic">NEON_CORE</h2>
@@ -642,7 +642,7 @@ function ImageUpload({ label, value, onChange }: { label: string, value: string,
         const compressed = await resizeImage(base64);
         onChange(compressed);
       } catch (err) {
-        console.error('Compression failed', err instanceof Error ? err.message : String(err));
+        console.error('Compression failed', err);
         onChange(base64);
       } finally {
         setIsUploading(false);
@@ -715,7 +715,7 @@ function ProjectManager({ projects, confirmPurge }: { projects: any[], confirmPu
       }
       closeForm();
     } catch (err: any) {
-      console.error('Project add/update error:', err.message || String(err));
+      console.error('Project add/update error:', err);
       const msg = err.message || '';
       if (msg.includes('permission-denied') || msg.includes('insufficient permissions')) {
         alert('ACCESS_DENIED: Your account is not authorized to write to the grid.');
@@ -735,7 +735,7 @@ function ProjectManager({ projects, confirmPurge }: { projects: any[], confirmPu
           await addLog('PROJECT_DELETE', `Node ${id} terminated from vault`);
           alert('NODE_PURGED_SUCCESSFULLY');
         } catch (err: any) {
-          console.error('Project delete error:', err.message || String(err));
+          console.error('Project delete error:', err);
           const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
           alert(`PURGE_FAILURE: ${errorData.error || 'Identity verification failed or signal lost.'}`);
           throw err;
@@ -937,7 +937,7 @@ function SkillManager({ skills, confirmPurge }: { skills: any[], confirmPurge: a
       }
       closeForm();
     } catch (err: any) {
-      console.error('Skill operation error:', err.message || String(err));
+      console.error('Skill operation error:', err);
       if (err.message?.includes('permission-denied') || err.message?.includes('insufficient permissions')) {
         alert('ACCESS_DENIED: Neutral protocol access restricted.');
       } else {
@@ -956,7 +956,7 @@ function SkillManager({ skills, confirmPurge }: { skills: any[], confirmPurge: a
           await addLog('SKILL_DELETE', `Protocol ${id} purged from engine`);
           alert('PROTOCOL_TERMINATED_SUCCESSFULLY');
         } catch (err: any) {
-          console.error('Skill delete error:', err.message || String(err));
+          console.error('Skill delete error:', err);
           const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
           alert(`TERMINATION_FAILURE: ${errorData.error || 'Protocol link unstable.'}`);
           throw err;
@@ -1072,7 +1072,7 @@ function MessagesList({ messages, confirmPurge }: { messages: any[], confirmPurg
           alert('SIGNAL_SUCCESSFULLY_PURGED');
           await addLog('MESSAGE_DELETED', `Signal from ${name} purged from database`);
         } catch (err: any) {
-          console.error('Delete message error:', err.message || String(err));
+          console.error('Delete message error:', err);
           const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
           alert(`PURGE_PROTOCOL_FAILED: ${errorData.error || 'Unknown Error'}`);
           throw err;
@@ -1112,7 +1112,7 @@ function MessagesList({ messages, confirmPurge }: { messages: any[], confirmPurg
                     await addLog('MESSAGES_WIPED', 'All intercepted signals purged from vault');
                     alert('DATABASE_WIPED_CLEAN');
                   } catch (err: any) {
-                    console.error('Wipe messages error:', err.message || String(err));
+                    console.error('Wipe messages error:', err);
                     const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
                     alert(`WIPE_PROTOCOL_FAILED: ${errorData.error || 'Unknown Error'}`);
                     throw err;
@@ -1211,7 +1211,7 @@ function BlogManager({ posts, confirmPurge }: { posts: any[], confirmPurge: any 
       }
       closeForm();
     } catch (err: any) {
-      console.error('Blog error:', err.message || String(err));
+      console.error('Blog error:', err);
       if (err.message?.includes('permission-denied') || err.message?.includes('insufficient permissions')) {
         alert('ACCESS_DENIED: Chronicle access restricted to Level_7 admins.');
       } else {
@@ -1230,7 +1230,7 @@ function BlogManager({ posts, confirmPurge }: { posts: any[], confirmPurge: any 
           await addLog('BLOG_DELETE', `Chronicle ${id} wiped from records`);
           alert('DATA_ERASED_SUCCESSFULLY');
         } catch (err: any) {
-          console.error('Blog delete error:', err.message || String(err));
+          console.error('Blog delete error:', err);
           const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
           alert(`ERASE_FAILURE: ${errorData.error || 'Signal interruption.'}`);
           throw err;
@@ -1367,7 +1367,7 @@ function ChallengeManager({ challenges, confirmPurge }: { challenges: any[], con
           await addLog('CHALLENGE_DELETE', `Challenge ${id} terminated`);
           alert('CHALLENGE_TERMINATED_SUCCESSFULLY');
         } catch (err: any) {
-          console.error('Challenge delete error:', err.message || String(err));
+          console.error('Challenge delete error:', err);
           const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
           alert(`TERMINATION_FAILURE: ${errorData.error || 'System rejection.'}`);
           throw err;
@@ -1520,7 +1520,7 @@ function VaultManager({ items, confirmPurge }: { items: any[], confirmPurge: any
           await addLog('VAULT_DELETE', `Classified item ${id} purged`);
           alert('DATA_ERASED_SUCCESSFULLY');
         } catch (err: any) {
-          console.error('Vault delete error:', err.message || String(err));
+          console.error('Vault delete error:', err);
           const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
           alert(`ERASE_FAILURE: ${errorData.error || 'Encryption lock-in.'}`);
           throw err;
@@ -1696,7 +1696,7 @@ function ContactManager({ contacts, confirmPurge }: { contacts: any[], confirmPu
       }
       closeForm();
     } catch (err: any) {
-      console.error('Contact error:', err.message || String(err));
+      console.error('Contact error:', err);
       if (err.message?.includes('permission-denied') || err.message?.includes('insufficient permissions')) {
         alert('ACCESS_DENIED: Signal hub reconfiguration restricted.');
       } else {
@@ -1715,7 +1715,7 @@ function ContactManager({ contacts, confirmPurge }: { contacts: any[], confirmPu
           await addLog('CONTACT_DELETE', `Signal node ${id} disconnected`);
           alert('SIGNAL_TERMINATED_SUCCESSFULLY');
         } catch (err: any) {
-          console.error('Contact delete error:', err.message || String(err));
+          console.error('Contact delete error:', err);
           const errorData = err.message.startsWith('{') ? JSON.parse(err.message) : { error: err.message };
           alert(`DISCONNECT_FAILURE: ${errorData.error || 'Signal node lock-out.'}`);
           throw err;
@@ -1917,7 +1917,7 @@ function SettingsManager({ settings }: { settings: any }) {
       await updateSettings(formData);
       alert('SYSTEM_PROTOCOLS_SYNCED');
     } catch (err: any) {
-      console.error('Settings save error:', err.message || String(err));
+      console.error('Settings save error:', err);
       if (err.message?.includes('quota-exceeded')) {
         alert('CRITICAL_FAILURE: FIRESTORE_QUOTA_EXCEEDED');
       } else if (err.message?.includes('permission-denied')) {

@@ -1,6 +1,6 @@
 import { Typewriter } from 'react-simple-typewriter';
 import { motion } from 'motion/react';
-import { ChevronDown, Download, Terminal } from 'lucide-react';
+import { ChevronDown, Download, Terminal, Monitor } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ResumeModal from './ResumeModal';
@@ -12,7 +12,7 @@ import { useLanguage, useSettings } from '../context/AppContext';
 export default function Hero() {
   const navigate = useNavigate();
   const { t, lang } = useLanguage();
-  const { profileImage, cvUrl } = useSettings();
+  const { profileImage, cvUrl, isDesktopMode, setIsDesktopMode } = useSettings();
   const [isResumeOpen, setIsResumeOpen] = useState(false);
 
   const handleCvAction = () => {
@@ -135,6 +135,20 @@ export default function Hero() {
                 <span className="skew-button-label flex items-center justify-center gap-3">
                   <Download size={16} className="text-white/40 group-hover:animate-bounce" />
                   {t('hero_cv')}
+                </span>
+              </motion.button>
+            </Magnetic>
+
+            <Magnetic>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsDesktopMode(!isDesktopMode)}
+                className={`skew-button flex-1 min-w-[200px] transition-all border-2 ${isDesktopMode ? 'border-primary-neon text-primary-neon bg-primary-neon/10' : 'border-white/10 text-white/50 hover:border-primary-neon/50'}`}
+              >
+                <span className="skew-button-label flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-[10px]">
+                  <Monitor size={16} className={isDesktopMode ? 'animate-pulse' : ''} />
+                  {isDesktopMode ? 'Desktop_Mode: ON' : 'Please Desktop mode on'}
                 </span>
               </motion.button>
             </Magnetic>
