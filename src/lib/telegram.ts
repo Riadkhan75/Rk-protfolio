@@ -21,7 +21,7 @@ export async function sendTelegramNotification(message: string) {
         parse_mode: 'HTML'
       })
     });
-  } catch (err) {
-    console.error('TELEGRAM_UPLINK_FAILURE:', err);
+  } catch (err: any) {
+    console.error('TELEGRAM_UPLINK_FAILURE:', err.message || String(err));
   }
 }

@@ -38,6 +38,7 @@ export async function trackVisit() {
       });
     }
   } catch (error) {
-    console.error('Analytics failed:', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Analytics failed:', msg);
   }
 }

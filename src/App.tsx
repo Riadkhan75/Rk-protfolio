@@ -119,10 +119,84 @@ function RootLayout({ children }: { children: ReactNode }) {
   };
 
   const isExcludeMaintenance = window.location.pathname.startsWith('/adminriad') || window.location.pathname.startsWith('/loginriad');
+  const isAdminPage = window.location.pathname.startsWith('/adminriad') || window.location.pathname.startsWith('/loginriad');
 
   if (maintenanceMode && !isExcludeMaintenance) {
     return <MaintenanceMode />;
   }
+
+  const content = (
+    <div className="relative">
+      <DynamicBackground />
+      {!isExcludeMaintenance && <Navbar />}
+      {!isExcludeMaintenance && <AlertBanner />}
+      
+      <div className="fixed bottom-8 left-8 z-[70] flex items-center gap-3">
+        <motion.button
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={toggleMute}
+          className={cn(
+            "w-12 h-12 rounded-full border border-primary-neon/30 bg-black/40 backdrop-blur-md flex items-center justify-center text-primary-neon shadow-[0_0_15px_rgba(var(--primary-color-rgb,0,243,255),0.2)] group overflow-hidden transition-all",
+            isMuted && "animate-pulse border-white/20 text-white/40"
+          )}
+        >
+          <div className="absolute inset-0 bg-primary-neon/5 group-hover:bg-primary-neon/20 transition-colors" />
+          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} className="animate-pulse" />}
+          {!isMuted && (
+            <motion.div 
+              animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="absolute inset-0 border border-primary-neon rounded-full"
+            />
+          )}
+        </motion.button>
+
+        {!isMuted && (
+          <motion.div 
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="bg-black/60 backdrop-blur-md border border-primary-neon/20 px-4 py-2 rounded-sm clip-path-polygon"
+          >
+            <p className="text-[8px] text-primary-neon font-black tracking-widest uppercase mb-1">SIGNAL_CONNECTED</p>
+            <p className="text-[10px] text-white font-mono flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-primary-neon rounded-full animate-pulse" />
+              Now_Playing: Ambient_Neural_Stream
+            </p>
+          </motion.div>
+        )}
+      </div>
+      
+      <div className={cn("relative z-10 min-h-[calc(100vh-200px)]", !isExcludeMaintenance && "pt-24")}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={window.location.pathname}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <AITerminal />
+
+      <Vault isOpen={isVaultOpen} onClose={() => setIsVaultOpen(false)} />
+
+      <Footer />
+
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999]"
+        style={{ 
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` 
+        }}
+      />
+    </div>
+  );
 
   return (
     <main className={`relative min-h-screen selection:bg-cyan-500 selection:text-black transition-colors duration-500 ${neonMode ? 'neon-theme' : ''}`}>
@@ -133,78 +207,7 @@ function RootLayout({ children }: { children: ReactNode }) {
       </AnimatePresence>
 
       {!isLoading && (
-        <SmoothScroll>
-          <div className="relative">
-            <DynamicBackground />
-            {!isExcludeMaintenance && <Navbar />}
-            {!isExcludeMaintenance && <AlertBanner />}
-            
-            <div className="fixed bottom-8 left-8 z-[70] flex items-center gap-3">
-              <motion.button
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={toggleMute}
-                className={cn(
-                  "w-12 h-12 rounded-full border border-primary-neon/30 bg-black/40 backdrop-blur-md flex items-center justify-center text-primary-neon shadow-[0_0_15px_rgba(var(--primary-color-rgb,0,243,255),0.2)] group overflow-hidden transition-all",
-                  isMuted && "animate-pulse border-white/20 text-white/40"
-                )}
-              >
-                <div className="absolute inset-0 bg-primary-neon/5 group-hover:bg-primary-neon/20 transition-colors" />
-                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} className="animate-pulse" />}
-                {!isMuted && (
-                  <motion.div 
-                    animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="absolute inset-0 border border-primary-neon rounded-full"
-                  />
-                )}
-              </motion.button>
-
-              {!isMuted && (
-                <motion.div 
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  className="bg-black/60 backdrop-blur-md border border-primary-neon/20 px-4 py-2 rounded-sm clip-path-polygon"
-                >
-                  <p className="text-[8px] text-primary-neon font-black tracking-widest uppercase mb-1">SIGNAL_CONNECTED</p>
-                  <p className="text-[10px] text-white font-mono flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-primary-neon rounded-full animate-pulse" />
-                    Now_Playing: Ambient_Neural_Stream
-                  </p>
-                </motion.div>
-              )}
-            </div>
-            
-            <div className={cn("relative z-10 min-h-[calc(100vh-200px)]", !isExcludeMaintenance && "pt-24")}>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={window.location.pathname}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                >
-                  {children}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            <AITerminal />
-
-            <Vault isOpen={isVaultOpen} onClose={() => setIsVaultOpen(false)} />
-
-            <Footer />
-
-            <div 
-              className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999]"
-              style={{ 
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` 
-              }}
-            />
-          </div>
-        </SmoothScroll>
+        isAdminPage ? content : <SmoothScroll>{content}</SmoothScroll>
       )}
     </main>
   );
